@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: nutrifit-postgres
+    environment:
+      POSTGRES_DB: nutrifit
+      POSTGRES_USER: nutrifit
+      POSTGRES_PASSWORD: nutrifit
+    ports:
+      - "5432:5432"
+    volumes:
+      - nutrifit_pg:/var/lib/postgresql/data
+
+volumes:
+  nutrifit_pg:

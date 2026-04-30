@@ -1,0 +1,230 @@
+.container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #fff;
+  }
+  
+  /* Header */
+  .header {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .headerContent {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brandLogo {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brandLogo img {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+  }
+
+  .brandName {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(90deg, #00d9ff, #00ff88);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .userSection {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .userEmail {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .logoutBtn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .logoutBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Main */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+  
+  /* Welcome Section */
+  .welcome {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  
+  .welcomeTitle {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 16px;
+    background: linear-gradient(90deg, #fff, #00d9ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .welcomeText {
+    font-size: 1.125rem;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  /* Cards */
+  .cardsContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+  
+  .card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 32px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 217, 255, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+  
+  .cardIcon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+  }
+  
+  .cardTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 12px;
+    color: #fff;
+  }
+  
+  .cardDescription {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0 0 20px;
+    line-height: 1.6;
+  }
+  
+  .cardAction {
+    display: inline-flex;
+    align-items: center;
+    color: #00d9ff;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: gap 0.2s ease;
+  }
+  
+  .card:hover .cardAction {
+    gap: 4px;
+  }
+  
+  /* Stats */
+  .quickStats {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 32px;
+  }
+  
+  .statsTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 24px;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 24px;
+  }
+  
+  .statItem {
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+  }
+  
+  .statNumber {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #00d9ff;
+    margin-bottom: 8px;
+  }
+  
+  .statLabel {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  /* Responsive */
+  @media (max-width: 640px) {
+    .headerContent {
+      flex-direction: column;
+      gap: 12px;
+    }
+  
+    .welcomeTitle {
+      font-size: 1.75rem;
+    }
+  
+    .card {
+      padding: 24px;
+    }
+  
+    .statNumber {
+      font-size: 2rem;
+    }
+  }
