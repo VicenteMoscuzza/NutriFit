@@ -3,9 +3,9 @@ services:
     image: postgres:16
     container_name: nutrifit-postgres
     environment:
-      POSTGRES_DB: nutrifit
-      POSTGRES_USER: nutrifit
-      POSTGRES_PASSWORD: nutrifit
+      POSTGRES_DB: ${POSTGRES_DB:-nutrifit}
+      POSTGRES_USER: ${POSTGRES_USER:-nutrifit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nutrifit}
     ports:
       - "5432:5432"
     volumes:

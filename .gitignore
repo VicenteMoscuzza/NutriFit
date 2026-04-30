@@ -1,0 +1,36 @@
+# Secrets / env files
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Java / Spring (Maven/Gradle)
+**/target/
+**/.classpath
+**/.project
+**/.settings/
+**/.springBeans
+**/.gradle/
+**/build/
+
+# Logs
+*.log
+
+# Node / frontend
+**/node_modules/
+**/dist/
+**/.next/
+**/.nuxt/
+**/.cache/
+
+# Python (if used)
+**/__pycache__/
+**/.venv/
+**/venv/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+**/.idea/
+**/.vscode/
+
