@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.rutinas.RutinaRepository;
+import com.example.rutinas.dto.EjercicioItemResponse;
 import com.example.rutinas.plan.dto.RutinaPlanCreateRequest;
 import com.example.rutinas.plan.dto.RutinaPlanItemResponse;
 import com.example.rutinas.plan.dto.RutinaPlanRutinaResponse;
@@ -43,7 +44,14 @@ public class RutinaPlanController {
 						new RutinaPlanRutinaResponse(
 								p.getRutina().getId(),
 								p.getRutina().getNombre(),
-								p.getRutina().getDescripcion())))
+								p.getRutina().getDescripcion(),
+								p.getRutina().getEjercicios()
+										.stream()
+										.map(re -> new EjercicioItemResponse(
+												re.getEjercicio().getId(),
+												re.getEjercicio().getNombre(),
+												re.getEjercicio().getDescripcion()))
+										.toList())))
 				.toList();
 	}
 
@@ -71,7 +79,14 @@ public class RutinaPlanController {
 				new RutinaPlanRutinaResponse(
 						rutina.getId(),
 						rutina.getNombre(),
-						rutina.getDescripcion()));
+						rutina.getDescripcion(),
+						rutina.getEjercicios()
+								.stream()
+								.map(re -> new EjercicioItemResponse(
+										re.getEjercicio().getId(),
+										re.getEjercicio().getNombre(),
+										re.getEjercicio().getDescripcion()))
+								.toList()));
 	}
 
 	@DeleteMapping("/{id}")

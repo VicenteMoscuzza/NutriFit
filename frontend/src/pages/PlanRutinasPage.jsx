@@ -5,7 +5,6 @@ import { listRutinas } from "../api/rutinas";
 import { addRutinaToDia, listRutinaPlan, removeRutinaPlanItem } from "../api/rutinaPlan";
 import styles from "./PlanRutinasPage.module.css";
 import logo from "../assets/Logo.png";
-import RutinasCrud from "../components/RutinasCrud";
 
 const DIAS = [
   { n: 1, label: "Lunes" },
@@ -26,6 +25,7 @@ export default function PlanRutinasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [addingDia, setAddingDia] = useState(() => new Map()); // diaSemana -> rutinaId (string)
+  const [savingDia, setSavingDia] = useState(() => new Set()); // diaSemana currently saving
 
   const planPorDia = useMemo(() => {
     const map = new Map();
@@ -77,13 +77,36 @@ export default function PlanRutinasPage() {
     refresh();
   }, []);
 
-  async function onAdd(diaSemana) {
-    const rutinaIdRaw = addingDia.get(diaSemana);
+  async function onAdd(diaSemana, rutinaIdArg) {
+    const rutinaIdRaw = rutinaIdArg ?? addingDia.get(diaSemana);
     const rutinaId = Number(rutinaIdRaw);
     if (!rutinaId) return;
 
+    const items = planPorDia.get(diaSemana) ?? [];
+    // Si ya está asignada esa misma rutina, no hacemos nada.
+    if (items.some((x) => Number(x?.rutina?.id) === rutinaId)) {
+      setAddingDia((prev) => {
+        const next = new Map(prev);
+        next.set(diaSemana, "");
+        return next;
+      });
+      return;
+    }
+
     setError("");
     try {
+      setSavingDia((prev) => {
+        const next = new Set(prev);
+        next.add(diaSemana);
+        return next;
+      });
+
+      // Regla: 1 rutina por día. Si ya hay una, la reemplazamos.
+      if (items.length > 0) {
+        await Promise.all(items.map((it) => removeRutinaPlanItem(it.id)));
+        setPlan((prev) => prev.filter((x) => x.diaSemana !== diaSemana));
+      }
+
       const created = await addRutinaToDia({ diaSemana, rutinaId });
       setPlan((prev) => [...prev, created]);
       setAddingDia((prev) => {
@@ -95,8 +118,14 @@ export default function PlanRutinasPage() {
       const msg =
         e.response?.data?.message ||
         e.response?.data?.detail ||
-        "No se pudo agregar la rutina a ese día";
+        "No se pudo guardar la rutina de ese día";
       setError(msg);
+    } finally {
+      setSavingDia((prev) => {
+        const next = new Set(prev);
+        next.delete(diaSemana);
+        return next;
+      });
     }
   }
 
@@ -155,7 +184,8 @@ export default function PlanRutinasPage() {
             {DIAS.map((d) => {
               const items = planPorDia.get(d.n) ?? [];
               const selected = addingDia.get(d.n) ?? "";
-              const canAdd = !loading && rutinas.length > 0;
+              const isSaving = savingDia.has(d.n);
+              const canAdd = !loading && rutinas.length > 0 && !isSaving;
               return (
                 <div key={d.n} className={styles.dayCol}>
                   <div className={styles.dayHeader}>
@@ -168,13 +198,15 @@ export default function PlanRutinasPage() {
                       className={styles.select}
                       value={selected}
                       disabled={!canAdd}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const val = e.target.value;
                         setAddingDia((prev) => {
                           const next = new Map(prev);
-                          next.set(d.n, e.target.value);
+                          next.set(d.n, val);
                           return next;
-                        })
-                      }
+                        });
+                        if (val) onAdd(d.n, val);
+                      }}
                     >
                       <option value="">
                         {rutinas.length === 0 ? "Creá una rutina abajo…" : "Elegí una rutina…"}
@@ -185,14 +217,7 @@ export default function PlanRutinasPage() {
                         </option>
                       ))}
                     </select>
-                    <button
-                      className={styles.addBtn}
-                      type="button"
-                      onClick={() => onAdd(d.n)}
-                      disabled={!canAdd || !selected}
-                    >
-                      Agregar
-                    </button>
+                    {isSaving ? <span className={styles.saving}>Guardando…</span> : null}
                   </div>
 
                   {items.length === 0 ? (
@@ -208,6 +233,18 @@ export default function PlanRutinasPage() {
                             </button>
                           </div>
                           {it.rutina?.descripcion && <p className={styles.itemDesc}>{it.rutina.descripcion}</p>}
+                          {Array.isArray(it.rutina?.ejercicios) && it.rutina.ejercicios.length > 0 ? (
+                            <ul className={styles.exerciseList}>
+                              {it.rutina.ejercicios.map((ej) => (
+                                <li key={ej.id} className={styles.exerciseItem}>
+                                  <span className={styles.exerciseName}>{ej.nombre}</span>
+                                  {ej.descripcion ? (
+                                    <span className={styles.exerciseDesc}> — {ej.descripcion}</span>
+                                  ) : null}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : null}
                         </li>
                       ))}
                     </ul>
@@ -219,13 +256,17 @@ export default function PlanRutinasPage() {
         </section>
 
         <section className={styles.panel} style={{ marginTop: 16 }}>
-          <h2 className={styles.title} style={{ fontSize: 20 }}>
-            Tus rutinas (CRUD)
-          </h2>
-          <p className={styles.subtitle} style={{ marginBottom: 12 }}>
-            Creá, editá o eliminá rutinas. Después podés asignarlas a cualquier día arriba.
-          </p>
-          <RutinasCrud />
+          <div className={styles.ctaRow}>
+            <div>
+              <h2 className={styles.ctaTitle}>¿Querés crear una rutina nueva?</h2>
+              <p className={styles.ctaSubtitle}>
+                Agregala en una pantalla aparte y después asignala al día que quieras.
+              </p>
+            </div>
+            <button className={styles.ctaBtn} type="button" onClick={() => navigate("/rutinas/nueva")}>
+              Agregar rutina
+            </button>
+          </div>
         </section>
       </main>
     </div>

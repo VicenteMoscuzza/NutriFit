@@ -3,7 +3,7 @@ import ui from "../pages/ListForm.module.css";
 import { createRutinaWithEjercicios, deleteRutina, listRutinas, updateRutina } from "../api/rutinas";
 import { createEjercicio, listEjercicios } from "../api/ejercicios";
 
-export default function RutinasCrud() {
+export default function RutinasCrud({ mode = "full", onDone }) {
   const [rutinas, setRutinas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -56,6 +56,7 @@ export default function RutinasCrud() {
       };
       if (editingId == null) {
         await createRutinaWithEjercicios(payload);
+        if (typeof onDone === "function") onDone();
       } else {
         await updateRutina(editingId, payload);
       }
@@ -126,6 +127,7 @@ export default function RutinasCrud() {
       setNewEjDescripcion("");
       setEjercicios((prev) => [...prev, created].sort((a, b) => a.nombre.localeCompare(b.nombre)));
       setSelectedEjercicioIds((prev) => new Set(prev).add(created.id));
+      setShowAddEjercicio(false);
     } catch (e3) {
       const msg =
         e3.response?.data?.detail ||
@@ -137,35 +139,46 @@ export default function RutinasCrud() {
     }
   }
 
+  useEffect(() => {
+    if (!showAddEjercicio) return;
+    function onKeyDown(e) {
+      if (e.key === "Escape") setShowAddEjercicio(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showAddEjercicio]);
+
   return (
     <div className={ui.grid}>
       {error && <div className={ui.error}>{error}</div>}
 
-      {loading ? (
-        <div className={ui.empty}>Cargando...</div>
-      ) : rutinas.length === 0 ? (
-        <div className={ui.empty}>Todavía no tenés rutinas registradas.</div>
-      ) : (
-        <ul className={ui.list}>
-          {rutinas.map((r) => (
-            <li key={r.id} className={ui.item}>
-              <p className={ui.itemTitle}>{r.nombre}</p>
-              {r.descripcion && <p className={ui.itemMeta}>{r.descripcion}</p>}
-              {Array.isArray(r.ejercicios) && r.ejercicios.length > 0 && (
-                <p className={ui.itemMeta}>Ejercicios: {r.ejercicios.map((x) => x.nombre).join(", ")}</p>
-              )}
-              <div className={ui.itemActions}>
-                <button className={ui.secondary} type="button" onClick={() => startEdit(r)}>
-                  Editar
-                </button>
-                <button className={ui.danger} type="button" onClick={() => onDelete(r)}>
-                  Eliminar
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      {mode === "full" ? (
+        loading ? (
+          <div className={ui.empty}>Cargando...</div>
+        ) : rutinas.length === 0 ? (
+          <div className={ui.empty}>Todavía no tenés rutinas registradas.</div>
+        ) : (
+          <ul className={ui.list}>
+            {rutinas.map((r) => (
+              <li key={r.id} className={ui.item}>
+                <p className={ui.itemTitle}>{r.nombre}</p>
+                {r.descripcion && <p className={ui.itemMeta}>{r.descripcion}</p>}
+                {Array.isArray(r.ejercicios) && r.ejercicios.length > 0 && (
+                  <p className={ui.itemMeta}>Ejercicios: {r.ejercicios.map((x) => x.nombre).join(", ")}</p>
+                )}
+                <div className={ui.itemActions}>
+                  <button className={ui.secondary} type="button" onClick={() => startEdit(r)}>
+                    Editar
+                  </button>
+                  <button className={ui.danger} type="button" onClick={() => onDelete(r)}>
+                    Eliminar
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
 
       <form className={ui.form} onSubmit={onSubmitRutina}>
         <label className={ui.label}>
@@ -219,46 +232,78 @@ export default function RutinasCrud() {
         <div className={ui.divider} />
 
         <div className={ui.actions}>
-          <button className={ui.secondary} type="button" onClick={() => setShowAddEjercicio((v) => !v)}>
-            {showAddEjercicio ? "Cancelar agregar ejercicio" : "No encuentro mi ejercicio"}
+          <button
+            className={ui.secondary}
+            type="button"
+            onClick={() => {
+              setShowAddEjercicio(true);
+              setNewEjNombre("");
+              setNewEjDescripcion("");
+            }}
+          >
+            Agregar ejercicio
           </button>
         </div>
 
-        {showAddEjercicio && (
-          <div className={ui.form}>
-            <label className={ui.label}>
-              Nombre del ejercicio
-              <input
-                className={ui.input}
-                value={newEjNombre}
-                onChange={(e) => setNewEjNombre(e.target.value)}
-                placeholder="Ej: Sentadilla"
-                maxLength={120}
-                required
-              />
-            </label>
-            <label className={ui.label}>
-              Descripción (opcional)
-              <textarea
-                className={ui.textarea}
-                value={newEjDescripcion}
-                onChange={(e) => setNewEjDescripcion(e.target.value)}
-                placeholder="Ej: con barra, 4x8"
-                maxLength={2000}
-              />
-            </label>
-            <div className={ui.actions}>
-              <button
-                className={ui.secondary}
-                type="button"
-                onClick={onCreateEjercicio}
-                disabled={savingEjercicio || !newEjNombre.trim()}
-              >
-                {savingEjercicio ? "Agregando..." : "Agregar ejercicio"}
-              </button>
+        {showAddEjercicio ? (
+          <div
+            className={ui.modalOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Agregar ejercicio"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) setShowAddEjercicio(false);
+            }}
+          >
+            <div className={ui.modal} onMouseDown={(e) => e.stopPropagation()}>
+              <div className={ui.modalHeader}>
+                <p className={ui.modalTitle}>Agregar ejercicio</p>
+                <button className={ui.modalClose} type="button" onClick={() => setShowAddEjercicio(false)}>
+                  ✕
+                </button>
+              </div>
+              <div className={ui.modalBody}>
+                <div className={ui.form}>
+                  <label className={ui.label}>
+                    Nombre del ejercicio
+                    <input
+                      className={ui.input}
+                      value={newEjNombre}
+                      onChange={(e) => setNewEjNombre(e.target.value)}
+                      placeholder="Ej: Sentadilla"
+                      maxLength={120}
+                      required
+                      autoFocus
+                    />
+                  </label>
+                  <label className={ui.label}>
+                    Descripción (opcional)
+                    <textarea
+                      className={ui.textarea}
+                      value={newEjDescripcion}
+                      onChange={(e) => setNewEjDescripcion(e.target.value)}
+                      placeholder="Ej: con barra, 4x8"
+                      maxLength={2000}
+                    />
+                  </label>
+                  <div className={ui.actions}>
+                    <button className={ui.secondary} type="button" onClick={() => setShowAddEjercicio(false)}>
+                      Cancelar
+                    </button>
+                    <button
+                      className={ui.button}
+                      type="button"
+                      onClick={onCreateEjercicio}
+                      disabled={savingEjercicio || !newEjNombre.trim()}
+                    >
+                      {savingEjercicio ? "Agregando..." : "Agregar ejercicio"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className={ui.actions}>
           {editingId != null && (

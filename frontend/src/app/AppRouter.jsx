@@ -6,6 +6,7 @@ import HomePage from "../pages/HomePage";
 import RutinasPage from "../pages/RutinasPage";
 import ComidasPage from "../pages/ComidasPage";
 import PlanRutinasPage from "../pages/PlanRutinasPage";
+import RutinaNuevaPage from "../pages/RutinaNuevaPage";
 
 export default function AppRouter() {
   return (
@@ -16,6 +17,7 @@ export default function AppRouter() {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/rutinas" element={<RutinasPage />} />
+        <Route path="/rutinas/nueva" element={<RutinaNuevaPage />} />
         <Route path="/rutinas/semana" element={<PlanRutinasPage />} />
         <Route path="/comidas" element={<ComidasPage />} />
       </Route>
