@@ -28,15 +28,17 @@ public class RutinaController {
 
 	private final RutinaRepository rutinaRepository;
 	private final EjercicioRepository ejercicioRepository;
+	private final RutinaOcultaRepository rutinaOcultaRepository;
 
-	public RutinaController(RutinaRepository rutinaRepository, EjercicioRepository ejercicioRepository) {
+	public RutinaController(RutinaRepository rutinaRepository, EjercicioRepository ejercicioRepository, RutinaOcultaRepository rutinaOcultaRepository) {
 		this.rutinaRepository = rutinaRepository;
 		this.ejercicioRepository = ejercicioRepository;
+		this.rutinaOcultaRepository = rutinaOcultaRepository;
 	}
 
 	@GetMapping
 	public List<RutinaResponse> listar(@AuthenticationPrincipal Usuario usuario) {
-		return rutinaRepository.findByUsuarioIdOrderByCreatedAtDesc(usuario.getId())
+		return rutinaRepository.findVisiblesParaUsuarioOrderByCreatedAtDesc(usuario.getId(), RutinaRepository.GLOBAL_USERNAME)
 				.stream()
 				.map(r -> new RutinaResponse(
 						r.getId(),
@@ -60,9 +62,9 @@ public class RutinaController {
 		var rutina = new Rutina(usuario, req.nombre(), req.descripcion());
 
 		if (req.ejercicioIds() != null && !req.ejercicioIds().isEmpty()) {
-			var ejercicios = ejercicioRepository.findAllById(req.ejercicioIds());
+			var ejercicios = ejercicioRepository.findByIdsVisiblesParaUsuario(req.ejercicioIds(), usuario.getId());
 			if (ejercicios.size() != req.ejercicioIds().size()) {
-				throw new IllegalArgumentException("Uno o más ejercicios no existen");
+				throw new IllegalArgumentException("Uno o más ejercicios no existen o no te pertenecen");
 			}
 			for (var e : ejercicios) {
 				rutina.getEjercicios().add(new RutinaEjercicio(rutina, e));
@@ -88,31 +90,69 @@ public class RutinaController {
 	public RutinaResponse actualizar(@AuthenticationPrincipal Usuario usuario,
 			@PathVariable Long id,
 			@Valid @RequestBody RutinaCreateRequest req) {
-		var rutina = rutinaRepository.findByIdAndUsuarioId(id, usuario.getId())
-				.orElseThrow(() -> new IllegalArgumentException("Rutina no encontrada"));
+		// Si es propia, editamos in-place.
+		var propia = rutinaRepository.findByIdAndUsuarioId(id, usuario.getId());
+		if (propia.isPresent()) {
+			var rutina = propia.get();
+			rutina.setNombre(req.nombre());
+			rutina.setDescripcion(req.descripcion());
 
-		rutina.setNombre(req.nombre());
-		rutina.setDescripcion(req.descripcion());
+			// Reemplazar relación con ejercicios
+			rutina.getEjercicios().clear();
+			if (req.ejercicioIds() != null && !req.ejercicioIds().isEmpty()) {
+				var ejercicios = ejercicioRepository.findByIdsVisiblesParaUsuario(req.ejercicioIds(), usuario.getId());
+				if (ejercicios.size() != req.ejercicioIds().size()) {
+					throw new IllegalArgumentException("Uno o más ejercicios no existen o no te pertenecen");
+				}
+				for (var e : ejercicios) {
+					rutina.getEjercicios().add(new RutinaEjercicio(rutina, e));
+				}
+			}
 
-		// Reemplazar relación con ejercicios
-		rutina.getEjercicios().clear();
-		if (req.ejercicioIds() != null && !req.ejercicioIds().isEmpty()) {
-			var ejercicios = ejercicioRepository.findAllById(req.ejercicioIds());
-			if (ejercicios.size() != req.ejercicioIds().size()) {
-				throw new IllegalArgumentException("Uno o más ejercicios no existen");
-			}
-			for (var e : ejercicios) {
-				rutina.getEjercicios().add(new RutinaEjercicio(rutina, e));
-			}
+			var saved = rutinaRepository.save(rutina);
+			return new RutinaResponse(
+					saved.getId(),
+					saved.getNombre(),
+					saved.getDescripcion(),
+					saved.getCreatedAt(),
+					saved.getEjercicios()
+							.stream()
+							.map(re -> new EjercicioItemResponse(
+									re.getEjercicio().getId(),
+									re.getEjercicio().getNombre(),
+									re.getEjercicio().getDescripcion()))
+							.toList());
 		}
 
-		var saved = rutinaRepository.save(rutina);
+		// Si es global, "copiar y ocultar": la rutina global sigue existiendo para otros.
+		var rutinaGlobal = rutinaRepository.findByIdVisibleParaUsuario(id, usuario.getId(), RutinaRepository.GLOBAL_USERNAME)
+				.orElseThrow(() -> new IllegalArgumentException("Rutina no encontrada"));
+		if (rutinaGlobal.getUsuario() == null || (rutinaGlobal.getUsuario() != null && RutinaRepository.GLOBAL_USERNAME.equals(rutinaGlobal.getUsuario().getNombre()))) {
+			// OK, es global (por usuario GLOBAL o null).
+		} else {
+			throw new IllegalArgumentException("Rutina no encontrada");
+		}
+
+		var nueva = new Rutina(usuario, req.nombre(), req.descripcion());
+		if (req.ejercicioIds() != null && !req.ejercicioIds().isEmpty()) {
+			var ejercicios = ejercicioRepository.findByIdsVisiblesParaUsuario(req.ejercicioIds(), usuario.getId());
+			if (ejercicios.size() != req.ejercicioIds().size()) {
+				throw new IllegalArgumentException("Uno o más ejercicios no existen o no te pertenecen");
+			}
+			for (var e : ejercicios) {
+				nueva.getEjercicios().add(new RutinaEjercicio(nueva, e));
+			}
+		}
+		var savedNueva = rutinaRepository.save(nueva);
+		if (!rutinaOcultaRepository.existsByUsuarioIdAndRutinaId(usuario.getId(), rutinaGlobal.getId())) {
+			rutinaOcultaRepository.save(new RutinaOculta(usuario, rutinaGlobal));
+		}
 		return new RutinaResponse(
-				saved.getId(),
-				saved.getNombre(),
-				saved.getDescripcion(),
-				saved.getCreatedAt(),
-				saved.getEjercicios()
+				savedNueva.getId(),
+				savedNueva.getNombre(),
+				savedNueva.getDescripcion(),
+				savedNueva.getCreatedAt(),
+				savedNueva.getEjercicios()
 						.stream()
 						.map(re -> new EjercicioItemResponse(
 								re.getEjercicio().getId(),
@@ -124,9 +164,24 @@ public class RutinaController {
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void eliminar(@AuthenticationPrincipal Usuario usuario, @PathVariable Long id) {
-		var rutina = rutinaRepository.findByIdAndUsuarioId(id, usuario.getId())
+		// Si es propia, borramos de verdad.
+		var propia = rutinaRepository.findByIdAndUsuarioId(id, usuario.getId());
+		if (propia.isPresent()) {
+			rutinaRepository.delete(propia.get());
+			return;
+		}
+
+		// Si es global, ocultamos solo para este usuario.
+		var rutina = rutinaRepository.findByIdVisibleParaUsuario(id, usuario.getId(), RutinaRepository.GLOBAL_USERNAME)
 				.orElseThrow(() -> new IllegalArgumentException("Rutina no encontrada"));
-		rutinaRepository.delete(rutina);
+		var owner = rutina.getUsuario();
+		final boolean esGlobal = owner == null || RutinaRepository.GLOBAL_USERNAME.equals(owner.getNombre());
+		if (!esGlobal) {
+			throw new IllegalArgumentException("Rutina no encontrada");
+		}
+		if (!rutinaOcultaRepository.existsByUsuarioIdAndRutinaId(usuario.getId(), rutina.getId())) {
+			rutinaOcultaRepository.save(new RutinaOculta(usuario, rutina));
+		}
 	}
 }
 

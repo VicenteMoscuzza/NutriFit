@@ -34,6 +34,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()  // login y logout sin token
                 .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
+                // Permitir preflight CORS (el navegador no envía cookies en OPTIONS)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()                  // todo lo demás requiere cookie
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

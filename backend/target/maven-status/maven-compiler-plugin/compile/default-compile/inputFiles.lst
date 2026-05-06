@@ -18,6 +18,8 @@ C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\ejercicios\dto\EjercicioResponse.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\ejercicios\Ejercicio.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\ejercicios\EjercicioController.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\ejercicios\EjercicioOculto.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\ejercicios\EjercicioOcultoRepository.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\ejercicios\EjercicioRepository.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\filter\JwtAuthFilter.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\MyApplication.java
@@ -33,8 +35,11 @@ C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\rutinas\Rutina.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\rutinas\RutinaController.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\rutinas\RutinaEjercicio.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\rutinas\RutinaOculta.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\rutinas\RutinaOcultaRepository.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\rutinas\RutinaRepository.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\security\JwtService.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\seed\GlobalRutinasSeeder.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\usuarios\dto\LoginRequest.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\usuarios\dto\UsuarioCreateRequest.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\example\usuarios\dto\UsuarioResponse.java

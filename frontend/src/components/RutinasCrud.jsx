@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import ui from "../pages/ListForm.module.css";
 import { createRutinaWithEjercicios, deleteRutina, listRutinas, updateRutina } from "../api/rutinas";
-import { createEjercicio, listEjercicios } from "../api/ejercicios";
+import { createEjercicio, deleteEjercicio, listEjercicios, updateEjercicio } from "../api/ejercicios";
 
-export default function RutinasCrud({ mode = "full", onDone }) {
+export default function RutinasCrud({ mode = "full", onDone, initialEditingRutinaId = null }) {
   const [rutinas, setRutinas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -21,6 +21,7 @@ export default function RutinasCrud({ mode = "full", onDone }) {
   const [newEjNombre, setNewEjNombre] = useState("");
   const [newEjDescripcion, setNewEjDescripcion] = useState("");
   const [savingEjercicio, setSavingEjercicio] = useState(false);
+  const [editingEjercicioId, setEditingEjercicioId] = useState(null);
 
   async function refresh() {
     setError("");
@@ -44,6 +45,16 @@ export default function RutinasCrud({ mode = "full", onDone }) {
     refresh();
   }, []);
 
+  useEffect(() => {
+    const id = Number(initialEditingRutinaId);
+    if (!id || rutinas.length === 0) return;
+    if (editingId != null) return;
+    const r = rutinas.find((x) => Number(x?.id) === id);
+    if (!r) return;
+    startEdit(r);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEditingRutinaId, rutinas]);
+
   async function onSubmitRutina(e) {
     e.preventDefault();
     setError("");
@@ -59,6 +70,7 @@ export default function RutinasCrud({ mode = "full", onDone }) {
         if (typeof onDone === "function") onDone();
       } else {
         await updateRutina(editingId, payload);
+        if (mode !== "full" && typeof onDone === "function") onDone();
       }
       setNombre("");
       setDescripcion("");
@@ -115,18 +127,54 @@ export default function RutinasCrud({ mode = "full", onDone }) {
     });
   }
 
-  async function onCreateEjercicio() {
+  function openNewEjercicio() {
+    setShowAddEjercicio(true);
+    setEditingEjercicioId(null);
+    setNewEjNombre("");
+    setNewEjDescripcion("");
+  }
+
+  function openEditEjercicio(ej) {
+    setShowAddEjercicio(true);
+    setEditingEjercicioId(ej.id);
+    setNewEjNombre(ej.nombre ?? "");
+    setNewEjDescripcion(ej.descripcion ?? "");
+  }
+
+  async function onSaveEjercicio() {
     setError("");
     setSavingEjercicio(true);
     try {
-      const created = await createEjercicio({
-        nombre: newEjNombre,
-        descripcion: newEjDescripcion,
-      });
+      if (editingEjercicioId == null) {
+        const created = await createEjercicio({
+          nombre: newEjNombre,
+          descripcion: newEjDescripcion,
+        });
+        setEjercicios((prev) => [...prev, created].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+        setSelectedEjercicioIds((prev) => new Set(prev).add(created.id));
+      } else {
+        const updated = await updateEjercicio(editingEjercicioId, {
+          nombre: newEjNombre,
+          descripcion: newEjDescripcion,
+        });
+        setEjercicios((prev) =>
+          prev
+            .map((x) => (x.id === updated.id ? updated : x))
+            .sort((a, b) => (a.nombre ?? "").localeCompare(b.nombre ?? ""))
+        );
+        setSelectedEjercicioIds((prev) => {
+          const next = new Set(prev);
+          // Si editamos un global, el backend devuelve una copia nueva con otro id.
+          if (updated.id !== editingEjercicioId && next.has(editingEjercicioId)) {
+            next.delete(editingEjercicioId);
+            next.add(updated.id);
+          }
+          return next;
+        });
+      }
       setNewEjNombre("");
       setNewEjDescripcion("");
-      setEjercicios((prev) => [...prev, created].sort((a, b) => a.nombre.localeCompare(b.nombre)));
-      setSelectedEjercicioIds((prev) => new Set(prev).add(created.id));
+      setEditingEjercicioId(null);
       setShowAddEjercicio(false);
     } catch (e3) {
       const msg =
@@ -136,6 +184,27 @@ export default function RutinasCrud({ mode = "full", onDone }) {
       setError(msg);
     } finally {
       setSavingEjercicio(false);
+    }
+  }
+
+  async function onDeleteEjercicio(ej) {
+    const ok = window.confirm(`¿Eliminar el ejercicio "${ej.nombre}"?`);
+    if (!ok) return;
+    setError("");
+    try {
+      await deleteEjercicio(ej.id);
+      setEjercicios((prev) => prev.filter((x) => x.id !== ej.id));
+      setSelectedEjercicioIds((prev) => {
+        const next = new Set(prev);
+        next.delete(ej.id);
+        return next;
+      });
+    } catch (e4) {
+      const msg =
+        e4.response?.data?.detail ||
+        e4.response?.data?.message ||
+        "No se pudo eliminar el ejercicio";
+      setError(msg);
     }
   }
 
@@ -211,53 +280,102 @@ export default function RutinasCrud({ mode = "full", onDone }) {
           {ejercicios.length === 0 ? (
             <div className={ui.empty}>No hay ejercicios cargados todavía.</div>
           ) : (
-            <div className={ui.selectList}>
-              {ejercicios.map((ej) => (
-                <label key={ej.id} className={ui.check}>
-                  <input
-                    type="checkbox"
-                    checked={selectedEjercicioIds.has(ej.id)}
-                    onChange={() => toggleEjercicio(ej.id)}
-                  />
-                  <div>
-                    <div className={ui.checkTitle}>{ej.nombre}</div>
-                    {ej.descripcion && <p className={ui.checkDesc}>{ej.descripcion}</p>}
-                  </div>
-                </label>
-              ))}
+            <div className={ui.exercisePicker}>
+              <div className={ui.exercisePickerMeta}>
+                <span>
+                  Seleccionados: <b>{selectedEjercicioIds.size}</b>
+                </span>
+                <div className={ui.exercisePickerRight}>
+                  <span className={ui.exercisePickerHint}>Tip: hacé click en la tarjeta</span>
+                  <button className={ui.secondary} type="button" onClick={openNewEjercicio}>
+                    Nuevo ejercicio
+                  </button>
+                </div>
+              </div>
+
+              <div className={ui.exerciseGrid}>
+                {ejercicios.map((ej) => {
+                  const selected = selectedEjercicioIds.has(ej.id);
+                  return (
+                    <label
+                      key={ej.id}
+                      className={`${ui.exerciseCard} ${selected ? ui.exerciseCardSelected : ""}`}
+                      role="checkbox"
+                      aria-checked={selected}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          toggleEjercicio(ej.id);
+                        }
+                      }}
+                    >
+                      <input
+                        className={ui.exerciseInput}
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleEjercicio(ej.id)}
+                      />
+
+                      <div className={ui.exerciseCardTop}>
+                        <div className={ui.exerciseCardTitle}>{ej.nombre}</div>
+                        <div className={ui.exerciseCardTopRight}>
+                          <button
+                            className={ui.iconBtn}
+                            type="button"
+                            title="Editar ejercicio"
+                            aria-label="Editar ejercicio"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              openEditEjercicio(ej);
+                            }}
+                          >
+                            ✎
+                          </button>
+                          <button
+                            className={`${ui.iconBtn} ${ui.iconDanger}`}
+                            type="button"
+                            title="Eliminar ejercicio"
+                            aria-label="Eliminar ejercicio"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onDeleteEjercicio(ej);
+                            }}
+                          >
+                            🗑
+                          </button>
+                          <div className={ui.exerciseCardMark} aria-hidden="true">
+                            {selected ? "✓" : "+"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {ej.descripcion && <p className={ui.exerciseCardDesc}>{ej.descripcion}</p>}
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
 
         <div className={ui.divider} />
 
-        <div className={ui.actions}>
-          <button
-            className={ui.secondary}
-            type="button"
-            onClick={() => {
-              setShowAddEjercicio(true);
-              setNewEjNombre("");
-              setNewEjDescripcion("");
-            }}
-          >
-            Agregar ejercicio
-          </button>
-        </div>
-
         {showAddEjercicio ? (
           <div
             className={ui.modalOverlay}
             role="dialog"
             aria-modal="true"
-            aria-label="Agregar ejercicio"
+            aria-label={editingEjercicioId == null ? "Nuevo ejercicio" : "Editar ejercicio"}
             onMouseDown={(e) => {
               if (e.target === e.currentTarget) setShowAddEjercicio(false);
             }}
           >
             <div className={ui.modal} onMouseDown={(e) => e.stopPropagation()}>
               <div className={ui.modalHeader}>
-                <p className={ui.modalTitle}>Agregar ejercicio</p>
+                <p className={ui.modalTitle}>{editingEjercicioId == null ? "Nuevo ejercicio" : "Editar ejercicio"}</p>
                 <button className={ui.modalClose} type="button" onClick={() => setShowAddEjercicio(false)}>
                   ✕
                 </button>
@@ -293,10 +411,10 @@ export default function RutinasCrud({ mode = "full", onDone }) {
                     <button
                       className={ui.button}
                       type="button"
-                      onClick={onCreateEjercicio}
+                      onClick={onSaveEjercicio}
                       disabled={savingEjercicio || !newEjNombre.trim()}
                     >
-                      {savingEjercicio ? "Agregando..." : "Agregar ejercicio"}
+                      {savingEjercicio ? "Guardando..." : "Guardar"}
                     </button>
                   </div>
                 </div>

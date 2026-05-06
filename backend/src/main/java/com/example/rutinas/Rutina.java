@@ -27,8 +27,9 @@ public class Rutina {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "usuario_id", nullable = false)
+	// nullable para permitir rutinas "globales" (para todo el mundo)
+	@ManyToOne(fetch = FetchType.LAZY, optional = true)
+	@JoinColumn(name = "usuario_id", nullable = true)
 	private Usuario usuario;
 
 	@Column(nullable = false, length = 120)
@@ -50,6 +51,10 @@ public class Rutina {
 		this.usuario = usuario;
 		this.nombre = nombre;
 		this.descripcion = descripcion;
+	}
+
+	public static Rutina global(String nombre, String descripcion) {
+		return new Rutina(null, nombre, descripcion);
 	}
 
 	@PrePersist

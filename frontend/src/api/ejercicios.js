@@ -10,3 +10,12 @@ export async function createEjercicio({ nombre, descripcion }) {
   return res.data;
 }
 
+export async function updateEjercicio(id, { nombre, descripcion }) {
+  const res = await api.put(`/api/ejercicios/${id}`, { nombre, descripcion });
+  return res.data;
+}
+
+export async function deleteEjercicio(id) {
+  await api.delete(`/api/ejercicios/${id}`);
+}
+

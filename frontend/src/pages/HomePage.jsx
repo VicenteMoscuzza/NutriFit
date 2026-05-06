@@ -1,7 +1,7 @@
 import { useAuth } from "../auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 import styles from "./HomePage.module.css";
-import logo from "../assets/Logo.png"
+import logo from "../assets/Logo.png";
 
 export default function HomePage() {
   const { user, logout } = useAuth();
@@ -18,7 +18,7 @@ export default function HomePage() {
             <h1 className={styles.brandName}>NutriFit</h1>
           </div>
           <div className={styles.userSection}>
-            <span className={styles.userEmail}>{user?.email}</span>
+            <span className={styles.userNombre}>{user?.nombre}</span>
             <button onClick={logout} className={styles.logoutBtn}>
               Cerrar sesión
             </button>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { listRutinas } from "../api/rutinas";
+import { deleteRutina, listRutinas } from "../api/rutinas";
 import { addRutinaToDia, listRutinaPlan, removeRutinaPlanItem } from "../api/rutinaPlan";
 import styles from "./PlanRutinasPage.module.css";
 import logo from "../assets/Logo.png";
@@ -26,6 +26,8 @@ export default function PlanRutinasPage() {
   const [error, setError] = useState("");
   const [addingDia, setAddingDia] = useState(() => new Map()); // diaSemana -> rutinaId (string)
   const [savingDia, setSavingDia] = useState(() => new Set()); // diaSemana currently saving
+
+  const [openRutinaIds, setOpenRutinaIds] = useState(() => new Set()); // "ver ejercicios"
 
   const planPorDia = useMemo(() => {
     const map = new Map();
@@ -143,6 +145,83 @@ export default function PlanRutinasPage() {
     }
   }
 
+  function toggleOpenRutina(rutinaId) {
+    setOpenRutinaIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(rutinaId)) next.delete(rutinaId);
+      else next.add(rutinaId);
+      return next;
+    });
+  }
+
+  async function onDeleteRutina(r) {
+    const ok = window.confirm(`¿Eliminar la rutina "${r.nombre}"?`);
+    if (!ok) return;
+    setError("");
+    try {
+      await deleteRutina(r.id);
+      await refresh();
+    } catch (e) {
+      const msg =
+        e?.response?.data?.detail ||
+        e?.response?.data?.message ||
+        "No se pudo eliminar la rutina";
+      setError(msg);
+    }
+  }
+
+  function IconEye({ className }) {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M2.2 12c1.7-4.6 6-8 9.8-8s8.1 3.4 9.8 8c-1.7 4.6-6 8-9.8 8s-8.1-3.4-9.8-8Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M12 16.2a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        />
+      </svg>
+    );
+  }
+
+  function IconPencil({ className }) {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L15.5 3.5a2.1 2.1 0 0 0-3 0L2 14v6Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+        <path d="M13.5 5.5 18.5 10.5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  function IconTrash({ className }) {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M9 4h6m-9 3h12m-1 0-1 14H8L7 7"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M10 11v7M14 11v7"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -256,17 +335,85 @@ export default function PlanRutinasPage() {
         </section>
 
         <section className={styles.panel} style={{ marginTop: 16 }}>
-          <div className={styles.ctaRow}>
+          <div className={styles.rutinasHeader}>
             <div>
-              <h2 className={styles.ctaTitle}>¿Querés crear una rutina nueva?</h2>
-              <p className={styles.ctaSubtitle}>
-                Agregala en una pantalla aparte y después asignala al día que quieras.
+              <h3 className={styles.rutinasTitle}>Rutinas creadas</h3>
+              <p className={styles.rutinasSubtitle}>
+                Revisá tus rutinas antes de asignarlas (ver ejercicios, editar o eliminar).
               </p>
             </div>
-            <button className={styles.ctaBtn} type="button" onClick={() => navigate("/rutinas/nueva")}>
-              Agregar rutina
+            <button className={styles.rutinasAddBtn} type="button" onClick={() => navigate("/rutinas/nueva")}>
+              + Nueva rutina
             </button>
           </div>
+
+          {loading ? null : rutinas.length === 0 ? (
+            <p className={styles.empty}>Todavía no tenés rutinas creadas.</p>
+          ) : (
+            <ul className={styles.rutinasList}>
+              {rutinas.map((r) => {
+                const open = openRutinaIds.has(r.id);
+                const hasEj = Array.isArray(r.ejercicios) && r.ejercicios.length > 0;
+                return (
+                  <li key={r.id} className={styles.rutinaCard}>
+                    <div className={styles.rutinaTop}>
+                      <div className={styles.rutinaInfo}>
+                        <p className={styles.rutinaName}>{r.nombre}</p>
+                        {r.descripcion ? <p className={styles.rutinaDesc}>{r.descripcion}</p> : null}
+                      </div>
+
+                      <div className={styles.rutinaActions}>
+                        <button
+                          className={styles.iconBtn}
+                          type="button"
+                          onClick={() => toggleOpenRutina(r.id)}
+                          aria-label={open ? "Ocultar ejercicios" : "Ver ejercicios"}
+                          title={open ? "Ocultar ejercicios" : "Ver ejercicios"}
+                        >
+                          <IconEye className={styles.icon} />
+                        </button>
+                        <button
+                          className={styles.iconBtn}
+                          type="button"
+                          onClick={() => navigate(`/rutinas/nueva?edit=${encodeURIComponent(String(r.id))}`)}
+                          aria-label="Editar"
+                          title="Editar"
+                        >
+                          <IconPencil className={styles.icon} />
+                        </button>
+                        <button
+                          className={`${styles.iconBtn} ${styles.iconDanger}`}
+                          type="button"
+                          onClick={() => onDeleteRutina(r)}
+                          aria-label="Eliminar"
+                          title="Eliminar"
+                        >
+                          <IconTrash className={styles.icon} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {open ? (
+                      hasEj ? (
+                        <ul className={styles.rutinaEjList}>
+                          {r.ejercicios.map((ej) => (
+                            <li key={ej.id} className={styles.rutinaEjItem}>
+                              <span className={styles.rutinaEjName}>{ej.nombre}</span>
+                              {ej.descripcion ? <span className={styles.rutinaEjDesc}> — {ej.descripcion}</span> : null}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className={styles.empty} style={{ marginTop: 8 }}>
+                          Esta rutina no tiene ejercicios todavía.
+                        </p>
+                      )
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
       </main>
     </div>

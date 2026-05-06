@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import styles from "./SectionPage.module.css";
 import RutinasCrud from "../components/RutinasCrud";
@@ -6,7 +6,12 @@ import logo from "../assets/Logo.png";
 
 export default function RutinaNuevaPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
+
+  const editIdRaw = searchParams.get("edit");
+  const editId = editIdRaw ? Number(editIdRaw) : null;
+  const isEdit = Boolean(editId);
 
   return (
     <div className={styles.container}>
@@ -35,11 +40,15 @@ export default function RutinaNuevaPage() {
       </header>
 
       <main className={styles.main}>
-        <h2 className={styles.title}>Nueva rutina</h2>
-        <p className={styles.subtitle}>Completá el formulario para crear una rutina y asignarla en tu plan semanal.</p>
+        <h2 className={styles.title}>{isEdit ? "Editar rutina" : "Nueva rutina"}</h2>
+        <p className={styles.subtitle}>
+          {isEdit
+            ? "Actualizá los datos de la rutina y volvé a tu plan semanal."
+            : "Completá el formulario para crear una rutina y asignarla en tu plan semanal."}
+        </p>
 
         <section className={styles.panel}>
-          <RutinasCrud mode="createOnly" onDone={() => navigate("/rutinas/semana")} />
+          <RutinasCrud mode="createOnly" initialEditingRutinaId={editId} onDone={() => navigate("/rutinas/semana")} />
         </section>
       </main>
     </div>

@@ -59,8 +59,8 @@ public class RutinaPlanController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public RutinaPlanItemResponse crear(@AuthenticationPrincipal Usuario usuario,
 			@Valid @RequestBody RutinaPlanCreateRequest req) {
-		// Validar que la rutina pertenezca al usuario
-		var rutina = rutinaRepository.findByIdAndUsuarioId(req.rutinaId(), usuario.getId())
+		// Validar que la rutina sea visible para el usuario (propia o global)
+		var rutina = rutinaRepository.findByIdVisibleParaUsuario(req.rutinaId(), usuario.getId(), RutinaRepository.GLOBAL_USERNAME)
 				.orElseThrow(() -> new IllegalArgumentException("Rutina no encontrada"));
 
 		// Evitar duplicados (mismo día + misma rutina)
