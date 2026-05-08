@@ -1,6 +1,6 @@
-package com.example.comidas;
+package com.example.alimentos;
 
-import com.example.alimentos.Alimento;
+import com.example.usuarios.Usuario;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,53 +11,48 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "comida_alimentos")
-public class ComidaAlimento {
+@Table(
+		name = "alimentos_ocultos",
+		uniqueConstraints = @UniqueConstraint(columnNames = { "usuario_id", "alimento_id" })
+)
+public class AlimentoOculto {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "comida_id", nullable = false)
-	private Comida comida;
+	@JoinColumn(name = "usuario_id", nullable = false)
+	private Usuario usuario;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "alimento_id", nullable = false)
 	private Alimento alimento;
 
-	@Column(name = "cantidad_g", nullable = false)
-	private double cantidadG;
+	@Column(name = "created_at", nullable = false)
+	private java.time.Instant createdAt;
 
-	protected ComidaAlimento() {
+	protected AlimentoOculto() {
 	}
 
-	public ComidaAlimento(Comida comida, Alimento alimento, double cantidadG) {
-		this.comida = comida;
+	public AlimentoOculto(Usuario usuario, Alimento alimento) {
+		this.usuario = usuario;
 		this.alimento = alimento;
-		this.cantidadG = cantidadG;
+		this.createdAt = java.time.Instant.now();
 	}
 
 	public Long getId() {
 		return id;
 	}
 
-	public Comida getComida() {
-		return comida;
+	public Usuario getUsuario() {
+		return usuario;
 	}
 
 	public Alimento getAlimento() {
 		return alimento;
 	}
-
-	public double getCantidadG() {
-		return cantidadG;
-	}
-
-	public void setCantidadG(double cantidadG) {
-		this.cantidadG = cantidadG;
-	}
 }
-

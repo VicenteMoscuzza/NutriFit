@@ -1,16 +1,16 @@
-package com.example.comidas.dto;
+package com.example.comidas.ideales.dto;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 
-public record ComidaResponse(
+import com.example.comidas.dto.AlimentoItemResponse;
+import com.example.comidas.dto.MacrosResponse;
+
+public record ComidaIdealResponse(
 		Long id,
 		int tipoComida,
-		boolean esPlantillaGlobal,
 		String nombre,
 		String descripcion,
-		LocalDate fecha,
 		Instant createdAt,
 		List<AlimentoItemResponse> alimentos,
 		MacrosResponse macrosTotales

@@ -10,3 +10,12 @@ export async function createAlimento(payload) {
   return res.data;
 }
 
+export async function updateAlimento(id, payload) {
+  const res = await api.put(`/api/alimentos/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteAlimento(id) {
+  await api.delete(`/api/alimentos/${id}`);
+}
+

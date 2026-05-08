@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ui from "../pages/ListForm.module.css";
 import { createRutinaWithEjercicios, deleteRutina, listRutinas, updateRutina } from "../api/rutinas";
 import { createEjercicio, deleteEjercicio, listEjercicios, updateEjercicio } from "../api/ejercicios";
+import { listRegistrosEjercicios, upsertRegistroEjercicio } from "../api/registrosEjercicios";
 
 export default function RutinasCrud({ mode = "full", onDone, initialEditingRutinaId = null }) {
   const [rutinas, setRutinas] = useState([]);
@@ -23,13 +24,28 @@ export default function RutinasCrud({ mode = "full", onDone, initialEditingRutin
   const [savingEjercicio, setSavingEjercicio] = useState(false);
   const [editingEjercicioId, setEditingEjercicioId] = useState(null);
 
+  const [registrosByEjercicioId, setRegistrosByEjercicioId] = useState(() => new Map());
+  const [showRegistroModal, setShowRegistroModal] = useState(false);
+  const [registroEjercicioId, setRegistroEjercicioId] = useState(null);
+  const [registroPesoMaxKg, setRegistroPesoMaxKg] = useState("");
+  const [savingRegistro, setSavingRegistro] = useState(false);
+
+  const registrosReadable = useMemo(() => registrosByEjercicioId, [registrosByEjercicioId]);
+
   async function refresh() {
     setError("");
     setLoading(true);
     try {
-      const [data, ej] = await Promise.all([listRutinas(), listEjercicios()]);
+      const [data, ej, registros] = await Promise.all([listRutinas(), listEjercicios(), listRegistrosEjercicios()]);
       setRutinas(Array.isArray(data) ? data : []);
       setEjercicios(Array.isArray(ej) ? ej : []);
+      const map = new Map();
+      if (Array.isArray(registros)) {
+        for (const r of registros) {
+          if (r && r.ejercicioId != null) map.set(Number(r.ejercicioId), r);
+        }
+      }
+      setRegistrosByEjercicioId(map);
     } catch (e) {
       const msg =
         e.response?.data?.detail ||
@@ -141,6 +157,47 @@ export default function RutinasCrud({ mode = "full", onDone, initialEditingRutin
     setNewEjDescripcion(ej.descripcion ?? "");
   }
 
+  function openRegistro(ej) {
+    setRegistroEjercicioId(ej.id);
+    const existing = registrosByEjercicioId.get(Number(ej.id));
+    const val = existing?.ultimoPesoMaxKg;
+    setRegistroPesoMaxKg(val == null ? "" : String(val));
+    setShowRegistroModal(true);
+  }
+
+  function closeRegistro() {
+    setShowRegistroModal(false);
+    setRegistroEjercicioId(null);
+    setRegistroPesoMaxKg("");
+  }
+
+  async function onSaveRegistro() {
+    if (registroEjercicioId == null) return;
+    setError("");
+    setSavingRegistro(true);
+    try {
+      const raw = registroPesoMaxKg.trim();
+      const payload = {
+        ultimoPesoMaxKg: raw === "" ? null : Number(raw),
+      };
+      const saved = await upsertRegistroEjercicio(registroEjercicioId, payload);
+      setRegistrosByEjercicioId((prev) => {
+        const next = new Map(prev);
+        next.set(Number(saved.ejercicioId), saved);
+        return next;
+      });
+      closeRegistro();
+    } catch (e) {
+      const msg =
+        e.response?.data?.detail ||
+        e.response?.data?.message ||
+        "No se pudo guardar el registro del ejercicio";
+      setError(msg);
+    } finally {
+      setSavingRegistro(false);
+    }
+  }
+
   async function onSaveEjercicio() {
     setError("");
     setSavingEjercicio(true);
@@ -216,6 +273,16 @@ export default function RutinasCrud({ mode = "full", onDone, initialEditingRutin
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [showAddEjercicio]);
+
+  useEffect(() => {
+    if (!showRegistroModal) return;
+    function onKeyDown(e) {
+      if (e.key === "Escape") closeRegistro();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRegistroModal]);
 
   return (
     <div className={ui.grid}>
@@ -296,6 +363,7 @@ export default function RutinasCrud({ mode = "full", onDone, initialEditingRutin
               <div className={ui.exerciseGrid}>
                 {ejercicios.map((ej) => {
                   const selected = selectedEjercicioIds.has(ej.id);
+                  const registro = registrosReadable.get(Number(ej.id));
                   return (
                     <label
                       key={ej.id}
@@ -353,6 +421,24 @@ export default function RutinasCrud({ mode = "full", onDone, initialEditingRutin
                       </div>
 
                       {ej.descripcion && <p className={ui.exerciseCardDesc}>{ej.descripcion}</p>}
+
+                      <p className={ui.exerciseCardDesc}>
+                        Último peso máx: <b>{registro?.ultimoPesoMaxKg != null ? `${registro.ultimoPesoMaxKg} kg` : "—"}</b>
+                      </p>
+
+                      <div className={ui.itemActions} style={{ marginTop: 8 }}>
+                        <button
+                          className={ui.secondary}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openRegistro(ej);
+                          }}
+                        >
+                          Registrar peso
+                        </button>
+                      </div>
                     </label>
                   );
                 })}
@@ -415,6 +501,52 @@ export default function RutinasCrud({ mode = "full", onDone, initialEditingRutin
                       disabled={savingEjercicio || !newEjNombre.trim()}
                     >
                       {savingEjercicio ? "Guardando..." : "Guardar"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {showRegistroModal ? (
+          <div
+            className={ui.modalOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Registrar peso máximo"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) closeRegistro();
+            }}
+          >
+            <div className={ui.modal} onMouseDown={(e) => e.stopPropagation()}>
+              <div className={ui.modalHeader}>
+                <p className={ui.modalTitle}>Registro del ejercicio</p>
+                <button className={ui.modalClose} type="button" onClick={closeRegistro}>
+                  ✕
+                </button>
+              </div>
+              <div className={ui.modalBody}>
+                <div className={ui.form}>
+                  <label className={ui.label}>
+                    Peso máximo (kg) de la última vez (opcional)
+                    <input
+                      className={ui.input}
+                      type="number"
+                      min="0"
+                      step="0.25"
+                      value={registroPesoMaxKg}
+                      onChange={(e) => setRegistroPesoMaxKg(e.target.value)}
+                      placeholder="Ej: 100"
+                      autoFocus
+                    />
+                  </label>
+                  <div className={ui.actions}>
+                    <button className={ui.secondary} type="button" onClick={closeRegistro} disabled={savingRegistro}>
+                      Cancelar
+                    </button>
+                    <button className={ui.button} type="button" onClick={onSaveRegistro} disabled={savingRegistro}>
+                      {savingRegistro ? "Guardando..." : "Guardar"}
                     </button>
                   </div>
                 </div>

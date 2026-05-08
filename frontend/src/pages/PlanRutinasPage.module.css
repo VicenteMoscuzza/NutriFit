@@ -343,6 +343,30 @@
   padding: 16px;
 }
 
+/* Modal detalle rutina: scroll interno + cards más compactas */
+.rutinaModal {
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+}
+
+.rutinaModalBody {
+  overflow: auto;
+}
+
+.rutinaExerciseGrid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.rutinaExerciseCard {
+  padding: 10px;
+  gap: 6px;
+}
+
+.rutinaExerciseInput {
+  padding: 8px 10px;
+}
+
 .form {
   display: grid;
   gap: 10px;

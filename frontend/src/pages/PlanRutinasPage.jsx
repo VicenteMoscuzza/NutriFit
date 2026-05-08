@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { deleteRutina, listRutinas } from "../api/rutinas";
 import { addRutinaToDia, listRutinaPlan, removeRutinaPlanItem } from "../api/rutinaPlan";
+import { listRegistrosEjercicios, upsertRegistroEjercicio } from "../api/registrosEjercicios";
 import styles from "./PlanRutinasPage.module.css";
+import ui from "./ListForm.module.css";
 import logo from "../assets/Logo.png";
 
 const DIAS = [
@@ -29,6 +31,12 @@ export default function PlanRutinasPage() {
 
   const [openRutinaIds, setOpenRutinaIds] = useState(() => new Set()); // "ver ejercicios"
 
+  const [registrosByEjercicioId, setRegistrosByEjercicioId] = useState(() => new Map());
+  const [showRutinaModal, setShowRutinaModal] = useState(false);
+  const [modalRutina, setModalRutina] = useState(null);
+  const [pesoDraftByEjercicioId, setPesoDraftByEjercicioId] = useState(() => new Map());
+  const [savingPesoIds, setSavingPesoIds] = useState(() => new Set());
+
   const planPorDia = useMemo(() => {
     const map = new Map();
     for (const d of DIAS) map.set(d.n, []);
@@ -42,9 +50,9 @@ export default function PlanRutinasPage() {
   async function refresh() {
     setError("");
     setLoading(true);
-    const results = await Promise.allSettled([listRutinas(), listRutinaPlan()]);
+    const results = await Promise.allSettled([listRutinas(), listRutinaPlan(), listRegistrosEjercicios()]);
 
-    const [rutinasRes, planRes] = results;
+    const [rutinasRes, planRes, registrosRes] = results;
 
     if (rutinasRes.status === "fulfilled") {
       setRutinas(Array.isArray(rutinasRes.value) ? rutinasRes.value : []);
@@ -70,6 +78,20 @@ export default function PlanRutinasPage() {
           `No se pudo cargar tu plan semanal${e?.response?.status ? ` (HTTP ${e.response.status})` : ""}`;
         return prev ? `${prev}\n${msg}` : msg;
       });
+    }
+
+    if (registrosRes.status === "fulfilled") {
+      const map = new Map();
+      const registros = registrosRes.value;
+      if (Array.isArray(registros)) {
+        for (const r of registros) {
+          if (r && r.ejercicioId != null) map.set(Number(r.ejercicioId), r);
+        }
+      }
+      setRegistrosByEjercicioId(map);
+    } else {
+      setRegistrosByEjercicioId(new Map());
+      // No lo tratamos como un error fatal: el plan y las rutinas pueden funcionar igual.
     }
 
     setLoading(false);
@@ -154,6 +176,61 @@ export default function PlanRutinasPage() {
     });
   }
 
+  function openRutinaDetalle(rutina) {
+    setModalRutina(rutina ?? null);
+    setPesoDraftByEjercicioId(() => {
+      const next = new Map();
+      const ejercicios = Array.isArray(rutina?.ejercicios) ? rutina.ejercicios : [];
+      for (const ej of ejercicios) {
+        const r = registrosByEjercicioId.get(Number(ej.id));
+        const val = r?.ultimoPesoMaxKg;
+        next.set(Number(ej.id), val == null ? "" : String(val));
+      }
+      return next;
+    });
+    setShowRutinaModal(true);
+  }
+
+  function closeRutinaDetalle() {
+    setShowRutinaModal(false);
+    setModalRutina(null);
+    setPesoDraftByEjercicioId(new Map());
+    setSavingPesoIds(new Set());
+  }
+
+  async function onSavePeso(ejercicioId) {
+    const id = Number(ejercicioId);
+    if (!id) return;
+    setError("");
+    setSavingPesoIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    try {
+      const raw = (pesoDraftByEjercicioId.get(id) ?? "").trim();
+      const payload = { ultimoPesoMaxKg: raw === "" ? null : Number(raw) };
+      const saved = await upsertRegistroEjercicio(id, payload);
+      setRegistrosByEjercicioId((prev) => {
+        const next = new Map(prev);
+        next.set(Number(saved.ejercicioId), saved);
+        return next;
+      });
+    } catch (e) {
+      const msg =
+        e.response?.data?.detail ||
+        e.response?.data?.message ||
+        "No se pudo guardar el peso del ejercicio";
+      setError(msg);
+    } finally {
+      setSavingPesoIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
   async function onDeleteRutina(r) {
     const ok = window.confirm(`¿Eliminar la rutina "${r.nombre}"?`);
     if (!ok) return;
@@ -221,6 +298,16 @@ export default function PlanRutinasPage() {
       </svg>
     );
   }
+
+  useEffect(() => {
+    if (!showRutinaModal) return;
+    function onKeyDown(e) {
+      if (e.key === "Escape") closeRutinaDetalle();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRutinaModal]);
 
   return (
     <div className={styles.container}>
@@ -306,7 +393,23 @@ export default function PlanRutinasPage() {
                       {items.map((it) => (
                         <li key={it.id} className={styles.item}>
                           <div className={styles.itemTop}>
-                            <p className={styles.itemName}>{it.rutina?.nombre ?? "Rutina"}</p>
+                            <p className={styles.itemName}>
+                              <button
+                                type="button"
+                                className={styles.iconBtn}
+                                style={{
+                                  width: "auto",
+                                  height: "auto",
+                                  padding: "6px 10px",
+                                  borderRadius: 10,
+                                  fontWeight: 900,
+                                }}
+                                onClick={() => openRutinaDetalle(it.rutina)}
+                                title="Ver y editar pesos"
+                              >
+                                {it.rutina?.nombre ?? "Rutina"}
+                              </button>
+                            </p>
                             <button className={styles.removeBtn} type="button" onClick={() => onRemove(it.id)}>
                               Quitar
                             </button>
@@ -333,6 +436,90 @@ export default function PlanRutinasPage() {
             })}
           </div>
         </section>
+
+        {showRutinaModal ? (
+          <div
+            className={ui.modalOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Detalle de rutina"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) closeRutinaDetalle();
+            }}
+          >
+            <div className={`${ui.modal} ${styles.rutinaModal}`} onMouseDown={(e) => e.stopPropagation()}>
+              <div className={ui.modalHeader}>
+                <p className={ui.modalTitle}>{modalRutina?.nombre ?? "Rutina"}</p>
+                <button className={ui.modalClose} type="button" onClick={closeRutinaDetalle}>
+                  ✕
+                </button>
+              </div>
+              <div className={`${ui.modalBody} ${styles.rutinaModalBody}`}>
+                {modalRutina?.descripcion ? <p className={ui.exerciseCardDesc}>{modalRutina.descripcion}</p> : null}
+                <div className={ui.divider} />
+
+                {Array.isArray(modalRutina?.ejercicios) && modalRutina.ejercicios.length > 0 ? (
+                  <div className={`${ui.exerciseGrid} ${styles.rutinaExerciseGrid}`}>
+                    {modalRutina.ejercicios.map((ej) => {
+                      const id = Number(ej.id);
+                      const registro = registrosByEjercicioId.get(id);
+                      const draft = pesoDraftByEjercicioId.get(id) ?? "";
+                      const saving = savingPesoIds.has(id);
+                      return (
+                        <div
+                          key={ej.id}
+                          className={`${ui.exerciseCard} ${styles.rutinaExerciseCard}`}
+                          style={{ cursor: "default" }}
+                        >
+                          <div className={ui.exerciseCardTop}>
+                            <div className={ui.exerciseCardTitle}>{ej.nombre}</div>
+                            <div className={ui.exerciseCardMark} aria-hidden="true">
+                              kg
+                            </div>
+                          </div>
+
+                          {ej.descripcion ? <p className={ui.exerciseCardDesc}>{ej.descripcion}</p> : null}
+                          <p className={ui.exerciseCardDesc}>
+                            Último guardado: <b>{registro?.ultimoPesoMaxKg != null ? `${registro.ultimoPesoMaxKg} kg` : "—"}</b>
+                          </p>
+
+                          <label className={ui.label}>
+                            Editar peso máx (kg)
+                            <input
+                              className={`${ui.input} ${styles.rutinaExerciseInput}`}
+                              type="number"
+                              min="0"
+                              step="0.25"
+                              value={draft}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setPesoDraftByEjercicioId((prev) => {
+                                  const next = new Map(prev);
+                                  next.set(id, val);
+                                  return next;
+                                });
+                              }}
+                              placeholder="Ej: 100"
+                              disabled={saving}
+                            />
+                          </label>
+
+                          <div className={ui.itemActions} style={{ marginTop: 8 }}>
+                            <button className={ui.secondary} type="button" onClick={() => onSavePeso(id)} disabled={saving}>
+                              {saving ? "Guardando..." : "Guardar"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className={ui.empty}>Esta rutina no tiene ejercicios todavía.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <section className={styles.panel} style={{ marginTop: 16 }}>
           <div className={styles.rutinasHeader}>

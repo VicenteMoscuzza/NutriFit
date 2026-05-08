@@ -1,10 +1,15 @@
 package com.example.alimentos;
 
+import com.example.usuarios.Usuario;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -14,6 +19,11 @@ public class Alimento {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+
+	// null = alimento global (visible para todos salvo ocultos)
+	@ManyToOne(fetch = FetchType.LAZY, optional = true)
+	@JoinColumn(name = "usuario_id", nullable = true)
+	private Usuario usuario;
 
 	@Column(nullable = false, length = 100)
 	private String nombre;
@@ -42,8 +52,9 @@ public class Alimento {
 	protected Alimento() {
 	}
 
-	public Alimento(String nombre, double caloriasPor100g, double proteinasPor100g, double carbohidratosPor100g,
+	public Alimento(Usuario usuario, String nombre, double caloriasPor100g, double proteinasPor100g, double carbohidratosPor100g,
 			double grasasPor100g, double fibraPor100g, Double tamanoPorcionG, String unidadPorcion) {
+		this.usuario = usuario;
 		this.nombre = nombre;
 		this.caloriasPor100g = caloriasPor100g;
 		this.proteinasPor100g = proteinasPor100g;
@@ -54,8 +65,18 @@ public class Alimento {
 		this.unidadPorcion = unidadPorcion;
 	}
 
+	public static Alimento global(String nombre, double caloriasPor100g, double proteinasPor100g, double carbohidratosPor100g,
+			double grasasPor100g, double fibraPor100g, Double tamanoPorcionG, String unidadPorcion) {
+		return new Alimento(null, nombre, caloriasPor100g, proteinasPor100g, carbohidratosPor100g, grasasPor100g, fibraPor100g,
+				tamanoPorcionG, unidadPorcion);
+	}
+
 	public Long getId() {
 		return id;
+	}
+
+	public Usuario getUsuario() {
+		return usuario;
 	}
 
 	public String getNombre() {

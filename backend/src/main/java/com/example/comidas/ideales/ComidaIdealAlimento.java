@@ -1,4 +1,4 @@
-package com.example.comidas;
+package com.example.comidas.ideales;
 
 import com.example.alimentos.Alimento;
 
@@ -13,16 +13,16 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "comida_alimentos")
-public class ComidaAlimento {
+@Table(name = "comida_ideal_alimentos")
+public class ComidaIdealAlimento {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "comida_id", nullable = false)
-	private Comida comida;
+	@JoinColumn(name = "comida_ideal_id", nullable = false)
+	private ComidaIdeal comidaIdeal;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "alimento_id", nullable = false)
@@ -31,11 +31,11 @@ public class ComidaAlimento {
 	@Column(name = "cantidad_g", nullable = false)
 	private double cantidadG;
 
-	protected ComidaAlimento() {
+	protected ComidaIdealAlimento() {
 	}
 
-	public ComidaAlimento(Comida comida, Alimento alimento, double cantidadG) {
-		this.comida = comida;
+	public ComidaIdealAlimento(ComidaIdeal comidaIdeal, Alimento alimento, double cantidadG) {
+		this.comidaIdeal = comidaIdeal;
 		this.alimento = alimento;
 		this.cantidadG = cantidadG;
 	}
@@ -44,8 +44,8 @@ public class ComidaAlimento {
 		return id;
 	}
 
-	public Comida getComida() {
-		return comida;
+	public ComidaIdeal getComidaIdeal() {
+		return comidaIdeal;
 	}
 
 	public Alimento getAlimento() {

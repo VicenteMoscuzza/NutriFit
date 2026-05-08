@@ -9,7 +9,8 @@ public record AlimentoResponse(
 		double grasasPor100g,
 		double fibraPor100g,
 		Double tamanoPorcionG,
-		String unidadPorcion
+		String unidadPorcion,
+		boolean esGlobal
 ) {
 }
 

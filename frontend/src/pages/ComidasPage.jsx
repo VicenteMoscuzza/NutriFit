@@ -4,8 +4,15 @@ import { useAuth } from "../auth/AuthContext";
 import styles from "./SectionPage.module.css";
 import ui from "./ListForm.module.css";
 import { createComidaWithAlimentos, deleteComida, listComidas, updateComida } from "../api/comidas";
-import { createAlimento, listAlimentos } from "../api/alimentos";
-import logo from "../assets/Logo.png"
+import { createAlimento, deleteAlimento, listAlimentos } from "../api/alimentos";
+import logo from "../assets/Logo.png";
+
+const TIPO_COMIDA_LABEL = {
+  1: "Desayuno",
+  2: "Almuerzo",
+  3: "Merienda",
+  4: "Cena",
+};
 
 export default function ComidasPage() {
   const navigate = useNavigate();
@@ -17,12 +24,14 @@ export default function ComidasPage() {
 
   const [alimentos, setAlimentos] = useState([]);
   const [selectedAlimentoIds, setSelectedAlimentoIds] = useState(() => new Set());
+  const [cantidadesPorId, setCantidadesPorId] = useState(() => ({})); // { [id]: number }
 
   const [editingId, setEditingId] = useState(null);
 
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [fecha, setFecha] = useState("");
+  const [tipoComida, setTipoComida] = useState(1);
   const [saving, setSaving] = useState(false);
 
   const [showAddAlimento, setShowAddAlimento] = useState(false);
@@ -63,11 +72,16 @@ export default function ComidasPage() {
     setError("");
     setSaving(true);
     try {
+      const alimentosPayload = Array.from(selectedAlimentoIds).map((id) => ({
+        alimentoId: id,
+        cantidadG: Number(cantidadesPorId[id] ?? 100),
+      }));
       const payload = {
+        tipoComida: Number(tipoComida),
         nombre,
         descripcion,
         fecha: fecha ? fecha : null,
-        alimentoIds: Array.from(selectedAlimentoIds),
+        alimentos: alimentosPayload,
       };
       if (editingId == null) {
         await createComidaWithAlimentos(payload);
@@ -77,7 +91,9 @@ export default function ComidasPage() {
       setNombre("");
       setDescripcion("");
       setFecha("");
+      setTipoComida(1);
       setSelectedAlimentoIds(new Set());
+      setCantidadesPorId({});
       setEditingId(null);
       await refresh();
     } catch (e2) {
@@ -96,8 +112,16 @@ export default function ComidasPage() {
     setNombre(c.nombre ?? "");
     setDescripcion(c.descripcion ?? "");
     setFecha(c.fecha ?? "");
+    setTipoComida(c.tipoComida != null ? Number(c.tipoComida) : 1);
     const ids = Array.isArray(c.alimentos) ? c.alimentos.map((x) => x.id) : [];
     setSelectedAlimentoIds(new Set(ids));
+    const nextCant = {};
+    if (Array.isArray(c.alimentos)) {
+      c.alimentos.forEach((x) => {
+        nextCant[x.id] = x.cantidadG ?? 100;
+      });
+    }
+    setCantidadesPorId(nextCant);
     setShowAddAlimento(false);
   }
 
@@ -106,12 +130,17 @@ export default function ComidasPage() {
     setNombre("");
     setDescripcion("");
     setFecha("");
+    setTipoComida(1);
     setSelectedAlimentoIds(new Set());
+    setCantidadesPorId({});
     setShowAddAlimento(false);
   }
 
   async function onDelete(c) {
-    const ok = window.confirm(`¿Eliminar la comida "${c.nombre}"?`);
+    const msg = c.esPlantillaGlobal
+      ? `¿Ocultar la comida base "${c.nombre}"? Seguirá existiendo para otros usuarios.`
+      : `¿Eliminar tu comida "${c.nombre}"?`;
+    const ok = window.confirm(msg);
     if (!ok) return;
     setError("");
     try {
@@ -126,10 +155,48 @@ export default function ComidasPage() {
   function toggleAlimento(id) {
     setSelectedAlimentoIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
+      const willRemove = next.has(id);
+      if (willRemove) next.delete(id);
       else next.add(id);
+
+      setCantidadesPorId((prevCant) => {
+        const nextCant = { ...prevCant };
+        if (willRemove) delete nextCant[id];
+        else nextCant[id] = nextCant[id] ?? 100;
+        return nextCant;
+      });
+
       return next;
     });
+  }
+
+  function setCantidad(id, value) {
+    setCantidadesPorId((prev) => ({ ...prev, [id]: value }));
+  }
+
+  async function onRemoveAlimentoDelCatalogo(a) {
+    const msg = a.esGlobal
+      ? `¿Ocultar "${a.nombre}" de tu lista? (sigue existiendo para otros usuarios)`
+      : `¿Eliminar tu alimento "${a.nombre}"?`;
+    if (!window.confirm(msg)) return;
+    setError("");
+    try {
+      await deleteAlimento(a.id);
+      setSelectedAlimentoIds((prev) => {
+        const next = new Set(prev);
+        next.delete(a.id);
+        return next;
+      });
+      setCantidadesPorId((prev) => {
+        const next = { ...prev };
+        delete next[a.id];
+        return next;
+      });
+      await refresh();
+    } catch (e) {
+      const m = e.response?.data?.detail || e.response?.data?.message || "No se pudo quitar el alimento";
+      setError(m);
+    }
   }
 
   async function onCreateAlimento() {
@@ -157,6 +224,7 @@ export default function ComidasPage() {
       setNewAlUnidad("");
       setAlimentos((prev) => [...prev, created].sort((a, b) => a.nombre.localeCompare(b.nombre)));
       setSelectedAlimentoIds((prev) => new Set(prev).add(created.id));
+      setCantidadesPorId((prev) => ({ ...prev, [created.id]: 100 }));
     } catch (e3) {
       const msg =
         e3.response?.data?.detail ||
@@ -197,8 +265,13 @@ export default function ComidasPage() {
       <main className={styles.main}>
         <h2 className={styles.title}>Comidas</h2>
         <p className={styles.subtitle}>
-          Registrá tus comidas y revisá el historial. Cada registro queda asociado a tu usuario.
+          Incluye cuatro comidas base (globales) y las que agregues vos. Las globales podés ocultarlas o editarlas (se crea una copia tuya, como en rutinas).
         </p>
+        <div className={ui.actions} style={{ marginBottom: 12 }}>
+          <button className={ui.secondary} type="button" onClick={() => navigate("/comidas/ideales")}>
+            Ver mis comidas ideales
+          </button>
+        </div>
 
         <section className={styles.panel}>
           <div className={ui.grid}>
@@ -212,15 +285,28 @@ export default function ComidasPage() {
               <ul className={ui.list}>
                 {comidas.map((c) => (
                   <li key={c.id} className={ui.item}>
-                    <p className={ui.itemTitle}>{c.nombre}</p>
+                    <p className={ui.itemTitle}>
+                      {c.nombre}
+                      {c.esPlantillaGlobal ? <span className={ui.itemMeta}> · Base global</span> : null}
+                    </p>
                     <p className={ui.itemMeta}>
+                      {TIPO_COMIDA_LABEL[c.tipoComida] ? `${TIPO_COMIDA_LABEL[c.tipoComida]} · ` : null}
                       {c.fecha ? `Fecha: ${c.fecha}` : null}
                       {c.fecha && c.descripcion ? " · " : null}
                       {c.descripcion ? c.descripcion : null}
                     </p>
                     {Array.isArray(c.alimentos) && c.alimentos.length > 0 && (
                       <p className={ui.itemMeta}>
-                        Alimentos: {c.alimentos.map((x) => x.nombre).join(", ")}
+                        Alimentos:{" "}
+                        {c.alimentos.map((x) => `${x.nombre} (${Number(x.cantidadG ?? 0).toFixed(0)}g)`).join(", ")}
+                      </p>
+                    )}
+                    {c.macrosTotales && (
+                      <p className={ui.itemMeta}>
+                        Totales: {Number(c.macrosTotales.calorias ?? 0).toFixed(0)} kcal · P{" "}
+                        {Number(c.macrosTotales.proteinas ?? 0).toFixed(1)} · C{" "}
+                        {Number(c.macrosTotales.carbohidratos ?? 0).toFixed(1)} · G{" "}
+                        {Number(c.macrosTotales.grasas ?? 0).toFixed(1)}
                       </p>
                     )}
                     <div className={ui.itemActions}>
@@ -228,7 +314,7 @@ export default function ComidasPage() {
                         Editar
                       </button>
                       <button className={ui.danger} type="button" onClick={() => onDelete(c)}>
-                        Eliminar
+                        {c.esPlantillaGlobal ? "Ocultar" : "Eliminar"}
                       </button>
                     </div>
                   </li>
@@ -239,12 +325,27 @@ export default function ComidasPage() {
             <form className={ui.form} onSubmit={onSubmitComida}>
               <div className={ui.row}>
                 <label className={ui.label}>
+                  Momento del día
+                  <select
+                    className={ui.input}
+                    value={tipoComida}
+                    onChange={(e) => setTipoComida(Number(e.target.value))}
+                    required
+                  >
+                    <option value={1}>Desayuno</option>
+                    <option value={2}>Almuerzo</option>
+                    <option value={3}>Merienda</option>
+                    <option value={4}>Cena</option>
+                  </select>
+                </label>
+
+                <label className={ui.label}>
                   {editingId == null ? "Nombre" : "Nombre (editando)"}
                   <input
                     className={ui.input}
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Ej: Almuerzo"
+                    placeholder="Ej: Almuerzo liviano"
                     maxLength={120}
                     required
                   />
@@ -281,20 +382,46 @@ export default function ComidasPage() {
                 ) : (
                   <div className={ui.selectList}>
                     {alimentos.map((a) => (
-                      <label key={a.id} className={ui.check}>
-                        <input
-                          type="checkbox"
-                          checked={selectedAlimentoIds.has(a.id)}
-                          onChange={() => toggleAlimento(a.id)}
-                        />
-                        <div>
-                          <div className={ui.checkTitle}>{a.nombre}</div>
-                          <p className={ui.checkDesc}>
-                            {a.caloriasPor100g} kcal/100g · P {a.proteinasPor100g} · C {a.carbohidratosPor100g} · G{" "}
-                            {a.grasasPor100g}
-                          </p>
+                      <div key={a.id} className={ui.item} style={{ border: "none", padding: "8px 0" }}>
+                        <label className={ui.check}>
+                          <input
+                            type="checkbox"
+                            checked={selectedAlimentoIds.has(a.id)}
+                            onChange={() => toggleAlimento(a.id)}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div className={ui.checkTitle}>
+                              {a.nombre}
+                              {a.esGlobal ? <span className={ui.checkDesc}> · Global</span> : null}
+                            </div>
+                            <p className={ui.checkDesc}>
+                              {a.caloriasPor100g} kcal/100g · P {a.proteinasPor100g} · C {a.carbohidratosPor100g} · G{" "}
+                              {a.grasasPor100g}
+                            </p>
+                            {selectedAlimentoIds.has(a.id) && (
+                              <div style={{ marginTop: 8, display: "flex", gap: 10, alignItems: "center" }}>
+                                <span className={ui.checkDesc}>Cantidad (g)</span>
+                                <input
+                                  className={ui.input}
+                                  style={{ maxWidth: 140 }}
+                                  inputMode="decimal"
+                                  value={cantidadesPorId[a.id] ?? 100}
+                                  onChange={(e) => setCantidad(a.id, e.target.value)}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                        <div className={ui.itemActions} style={{ marginTop: 6 }}>
+                          <button
+                            type="button"
+                            className={ui.danger}
+                            onClick={() => onRemoveAlimentoDelCatalogo(a)}
+                          >
+                            {a.esGlobal ? "Ocultar" : "Eliminar"}
+                          </button>
                         </div>
-                      </label>
+                      </div>
                     ))}
                   </div>
                 )}
