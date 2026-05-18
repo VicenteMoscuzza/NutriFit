@@ -341,6 +341,14 @@ export default function PlanRutinasPage() {
           Elegí un día y agregá una de tus rutinas. Podés repetir rutinas en distintos días.
         </p>
 
+        <button
+          type="button"
+          className={styles.entrenarCta}
+          onClick={() => navigate("/entrenar")}
+        >
+          💪 Entrenar ahora (modo gimnasio)
+        </button>
+
         <section className={styles.panel}>
           {error && <div className={styles.error}>{error}</div>}
 
@@ -356,7 +364,6 @@ export default function PlanRutinasPage() {
                 <div key={d.n} className={styles.dayCol}>
                   <div className={styles.dayHeader}>
                     <h3 className={styles.dayTitle}>{d.label}</h3>
-                    <span className={styles.dayCount}>{items.length}</span>
                   </div>
 
                   <div className={styles.addRow}>

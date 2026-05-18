@@ -133,6 +133,27 @@
   line-height: 1.5;
 }
 
+.entrenarCta {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 20px 0 8px;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #00d9ff, #00ff88);
+  color: #0f0f1a;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.entrenarCta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 217, 255, 0.25);
+}
+
 .panel {
   margin-top: 18px;
   background: rgba(255, 255, 255, 0.05);

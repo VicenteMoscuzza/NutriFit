@@ -8,6 +8,7 @@ import ComidasPage from "../pages/ComidasPage";
 import ComidasIdealesPage from "../pages/ComidasIdealesPage";
 import PlanRutinasPage from "../pages/PlanRutinasPage";
 import RutinaNuevaPage from "../pages/RutinaNuevaPage";
+import EntrenarPage from "../pages/EntrenarPage";
 
 export default function AppRouter() {
   return (
@@ -20,6 +21,7 @@ export default function AppRouter() {
         <Route path="/rutinas" element={<RutinasPage />} />
         <Route path="/rutinas/nueva" element={<RutinaNuevaPage />} />
         <Route path="/rutinas/semana" element={<PlanRutinasPage />} />
+        <Route path="/entrenar" element={<EntrenarPage />} />
         <Route path="/comidas" element={<ComidasPage />} />
         <Route path="/comidas/ideales" element={<ComidasIdealesPage />} />
       </Route>

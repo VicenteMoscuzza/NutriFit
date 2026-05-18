@@ -39,6 +39,20 @@ export default function HomePage() {
         <section className={styles.cardsContainer}>
           <article 
             className={styles.card} 
+            onClick={() => navigate("/entrenar")}
+          >
+            <div className={styles.cardIcon}>💪</div>
+            <h3 className={styles.cardTitle}>Entrenar ahora</h3>
+            <p className={styles.cardDescription}>
+              Modo gimnasio: elegí tu rutina y registrá series con peso en tiempo real.
+            </p>
+            <span className={styles.cardAction}>
+              Ir al entrenamiento →
+            </span>
+          </article>
+
+          <article 
+            className={styles.card} 
             onClick={() => navigate("/rutinas/semana")}
           >
             <div className={styles.cardIcon}>🏋️</div>
