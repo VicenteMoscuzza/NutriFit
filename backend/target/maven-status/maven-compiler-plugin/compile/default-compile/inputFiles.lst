@@ -1,1 +1,15 @@
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\api\ApiExceptionHandler.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\config\SecurityConfig.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\NutrifitBackendApplication.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\security\JwtAuthenticationFilter.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\security\JwtService.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\AuthController.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\CredencialesInvalidasException.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\dto\LoginRequest.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\dto\LoginResponse.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\dto\RegistroUsuarioRequest.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\dto\UsuarioResponse.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\EmailYaRegistradoException.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\Usuario.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\UsuarioRepository.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\usuarios\UsuarioService.java
