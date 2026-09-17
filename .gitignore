@@ -1,36 +1,19 @@
-# Secrets / env files
-.env
-.env.*
-!.env.example
-!.env.template
+# Backend (Maven / Java)
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/.env
 
-# Java / Spring (Maven/Gradle)
-**/target/
-**/.classpath
-**/.project
-**/.settings/
-**/.springBeans
-**/.gradle/
-**/build/
+# Frontend (Node / Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
 
-# Logs
-*.log
+# IDE
+.idea/
+.vscode/
+*.iml
 
-# Node / frontend
-**/node_modules/
-**/dist/
-**/.next/
-**/.nuxt/
-**/.cache/
-
-# Python (if used)
-**/__pycache__/
-**/.venv/
-**/venv/
-
-# OS / IDE
+# OS
 .DS_Store
 Thumbs.db
-**/.idea/
-**/.vscode/
-
