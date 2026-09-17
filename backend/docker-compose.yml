@@ -1,15 +1,16 @@
 services:
-  db:
-    image: postgres:16
+  postgres:
+    image: postgres:16-alpine
     container_name: nutrifit-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-nutrifit}
-      POSTGRES_USER: ${POSTGRES_USER:-nutrifit}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nutrifit}
+      POSTGRES_DB: ${NUTRIFIT_DB_NAME:-nutrifit}
+      POSTGRES_USER: ${NUTRIFIT_DB_USER:-nutrifit}
+      POSTGRES_PASSWORD: ${NUTRIFIT_DB_PASSWORD:-nutrifit}
     ports:
-      - "5432:5432"
+      - "${NUTRIFIT_DB_PORT:-5433}:5432"
     volumes:
-      - nutrifit_pg:/var/lib/postgresql/data
+      - nutrifit-postgres-data:/var/lib/postgresql/data
 
 volumes:
-  nutrifit_pg:
+  nutrifit-postgres-data:
