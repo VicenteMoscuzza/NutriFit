@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import Navbar from '../components/Navbar'
 import { crearEjercicio, listarEjercicios, type Ejercicio } from '../api/ejercicios'
 import { ApiError } from '../api/client'
 
@@ -43,57 +43,60 @@ export default function EjerciciosPage() {
   }
 
   return (
-    <section className="page">
-      <p>
-        <Link to="/">← Volver</Link>
-      </p>
-      <h1>Ejercicios</h1>
+    <>
+      <Navbar />
+      <main className="page-content">
+        <section className="page">
+          <div className="page-header">
+            <h1>Ejercicios</h1>
+            <button type="button" onClick={() => setMostrarFormulario((valor) => !valor)}>
+              {mostrarFormulario ? 'Cancelar' : 'Crear ejercicio'}
+            </button>
+          </div>
 
-      <button type="button" onClick={() => setMostrarFormulario((valor) => !valor)}>
-        {mostrarFormulario ? 'Cancelar' : 'Crear ejercicio'}
-      </button>
+          {mostrarFormulario && (
+            <form className="auth-form" onSubmit={handleCrear} noValidate>
+              <label htmlFor="nombre">Nombre</label>
+              <input id="nombre" value={nombre} onChange={(event) => setNombre(event.target.value)} />
 
-      {mostrarFormulario && (
-        <form className="auth-form" onSubmit={handleCrear} noValidate>
-          <label htmlFor="nombre">Nombre</label>
-          <input id="nombre" value={nombre} onChange={(event) => setNombre(event.target.value)} />
+              <label htmlFor="grupoMuscular">Grupo muscular</label>
+              <select
+                id="grupoMuscular"
+                value={grupoMuscular}
+                onChange={(event) => setGrupoMuscular(event.target.value)}
+              >
+                {GRUPOS_MUSCULARES.map((grupo) => (
+                  <option key={grupo} value={grupo}>
+                    {grupo}
+                  </option>
+                ))}
+              </select>
 
-          <label htmlFor="grupoMuscular">Grupo muscular</label>
-          <select
-            id="grupoMuscular"
-            value={grupoMuscular}
-            onChange={(event) => setGrupoMuscular(event.target.value)}
-          >
-            {GRUPOS_MUSCULARES.map((grupo) => (
-              <option key={grupo} value={grupo}>
-                {grupo}
-              </option>
-            ))}
-          </select>
+              {error && <p className="field-error">{error}</p>}
 
-          {error && <p className="field-error">{error}</p>}
+              <button type="submit" disabled={creando}>
+                {creando ? 'Creando...' : 'Guardar'}
+              </button>
+            </form>
+          )}
 
-          <button type="submit" disabled={creando}>
-            {creando ? 'Creando...' : 'Guardar'}
-          </button>
-        </form>
-      )}
-
-      {cargando ? (
-        <p>Cargando ejercicios...</p>
-      ) : (
-        <ul className="lista-ejercicios">
-          {ejercicios.map((ejercicio) => (
-            <li key={ejercicio.id}>
-              <span className="nombre">{ejercicio.nombre}</span>
-              <span className="grupo">{ejercicio.grupoMuscular}</span>
-              <span className={ejercicio.esGlobal ? 'etiqueta etiqueta-global' : 'etiqueta etiqueta-propio'}>
-                {ejercicio.esGlobal ? 'Global' : 'Mío'}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+          {cargando ? (
+            <p>Cargando ejercicios...</p>
+          ) : (
+            <ul className="lista-ejercicios">
+              {ejercicios.map((ejercicio) => (
+                <li key={ejercicio.id}>
+                  <span className="nombre">{ejercicio.nombre}</span>
+                  <span className="grupo">{ejercicio.grupoMuscular}</span>
+                  <span className={ejercicio.esGlobal ? 'etiqueta etiqueta-global' : 'etiqueta etiqueta-propio'}>
+                    {ejercicio.esGlobal ? 'Global' : 'Mío'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </main>
+    </>
   )
 }

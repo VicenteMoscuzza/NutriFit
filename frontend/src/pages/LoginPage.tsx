@@ -34,35 +34,39 @@ export default function LoginPage() {
 
   return (
     <section className="auth">
-      <h1>Iniciar sesión</h1>
-      <form className="auth-form" onSubmit={handleSubmit} noValidate>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          autoComplete="email"
-        />
+      <div className="auth-card">
+        <span className="auth-logo">N</span>
+        <h1>Iniciar sesión</h1>
+        <p className="auth-subtitle">Ingresá tus datos para continuar.</p>
+        <form className="auth-form" onSubmit={handleSubmit} noValidate>
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+          />
 
-        <label htmlFor="contrasena">Contraseña</label>
-        <input
-          id="contrasena"
-          type="password"
-          value={contrasena}
-          onChange={(event) => setContrasena(event.target.value)}
-          autoComplete="current-password"
-        />
+          <label htmlFor="contrasena">Contraseña</label>
+          <input
+            id="contrasena"
+            type="password"
+            value={contrasena}
+            onChange={(event) => setContrasena(event.target.value)}
+            autoComplete="current-password"
+          />
 
-        {errorGeneral && <p className="field-error">{errorGeneral}</p>}
+          {errorGeneral && <p className="field-error">{errorGeneral}</p>}
 
-        <button type="submit" disabled={enviando}>
-          {enviando ? 'Ingresando...' : 'Iniciar sesión'}
-        </button>
-      </form>
-      <p>
-        ¿Todavía no tenés cuenta? <Link to="/registro">Registrarme</Link>
-      </p>
+          <button type="submit" disabled={enviando}>
+            {enviando ? 'Ingresando...' : 'Iniciar sesión'}
+          </button>
+        </form>
+        <p className="auth-footer">
+          ¿Todavía no tenés cuenta? <Link to="/registro">Registrarme</Link>
+        </p>
+      </div>
     </section>
   )
 }

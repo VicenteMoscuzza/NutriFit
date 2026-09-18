@@ -1,5 +1,6 @@
 package com.nutrifit.api;
 
+import com.nutrifit.entrenamiento.SerieEntrenamientoNoEncontradaException;
 import com.nutrifit.rutinas.DiaSemanaInvalidoException;
 import com.nutrifit.rutinas.EjercicioNoDisponibleException;
 import com.nutrifit.rutinas.EjercicioRutinaNoEncontradoException;
@@ -52,6 +53,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(EjercicioRutinaNoEncontradoException.class)
     public ResponseEntity<Map<String, Object>> manejarEjercicioRutinaNoEncontrado(EjercicioRutinaNoEncontradoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
+    }
+
+    @ExceptionHandler(SerieEntrenamientoNoEncontradaException.class)
+    public ResponseEntity<Map<String, Object>> manejarSerieEntrenamientoNoEncontrada(SerieEntrenamientoNoEncontradaException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
     }
 }

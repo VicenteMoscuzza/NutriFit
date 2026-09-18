@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import Navbar from '../components/Navbar'
 import { listarEjercicios, type Ejercicio } from '../api/ejercicios'
 import { ApiError } from '../api/client'
 import { agregarEjercicioADia, eliminarEjercicioDeDia, obtenerSemana, type DiaSemana } from '../api/rutinas'
@@ -69,90 +69,99 @@ export default function RutinaPage() {
 
   if (cargando) {
     return (
-      <section className="page">
-        <p>Cargando rutina...</p>
-      </section>
+      <>
+        <Navbar />
+        <main className="page-content">
+          <section className="page">
+            <p>Cargando rutina...</p>
+          </section>
+        </main>
+      </>
     )
   }
 
   return (
-    <section className="page">
-      <p>
-        <Link to="/">← Volver</Link>
-      </p>
-      <h1>Mi rutina semanal</h1>
-
-      <div className="semana">
-        {semana.map((dia) => (
-          <div className="dia" key={dia.diaSemana}>
-            <div className="dia-header">
-              <h2>{dia.nombreDia}</h2>
-              <button type="button" onClick={() => alternarFormulario(dia.diaSemana)}>
-                {diaFormularioAbierto === dia.diaSemana ? 'Cancelar' : '+ Agregar ejercicio'}
-              </button>
-            </div>
-
-            {dia.ejercicios.length === 0 ? (
-              <p className="dia-vacio">Sin ejercicios</p>
-            ) : (
-              <ul className="lista-ejercicios">
-                {dia.ejercicios.map((ejercicio) => (
-                  <li key={ejercicio.id}>
-                    <span className="nombre">{ejercicio.nombreEjercicio}</span>
-                    <span className="grupo">
-                      {ejercicio.seriesObjetivo} series × {ejercicio.repeticionesObjetivo} reps
-                    </span>
-                    <button type="button" onClick={() => handleQuitar(dia.diaSemana, ejercicio.id)}>
-                      Quitar
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {diaFormularioAbierto === dia.diaSemana && (
-              <form className="auth-form" onSubmit={(event) => handleAgregar(event, dia.diaSemana)} noValidate>
-                <label htmlFor={`ejercicio-${dia.diaSemana}`}>Ejercicio</label>
-                <select
-                  id={`ejercicio-${dia.diaSemana}`}
-                  value={ejercicioSeleccionado}
-                  onChange={(event) => setEjercicioSeleccionado(event.target.value)}
-                >
-                  {ejerciciosDisponibles.map((ejercicio) => (
-                    <option key={ejercicio.id} value={ejercicio.id}>
-                      {ejercicio.nombre} ({ejercicio.grupoMuscular})
-                    </option>
-                  ))}
-                </select>
-
-                <label htmlFor={`series-${dia.diaSemana}`}>Series</label>
-                <input
-                  id={`series-${dia.diaSemana}`}
-                  type="number"
-                  min={1}
-                  value={series}
-                  onChange={(event) => setSeries(event.target.value)}
-                />
-
-                <label htmlFor={`reps-${dia.diaSemana}`}>Repeticiones</label>
-                <input
-                  id={`reps-${dia.diaSemana}`}
-                  type="number"
-                  min={1}
-                  value={repeticiones}
-                  onChange={(event) => setRepeticiones(event.target.value)}
-                />
-
-                {error && <p className="field-error">{error}</p>}
-
-                <button type="submit" disabled={guardando}>
-                  {guardando ? 'Agregando...' : 'Agregar'}
-                </button>
-              </form>
-            )}
+    <>
+      <Navbar />
+      <main className="page-content">
+        <section className="page">
+          <div className="page-header">
+            <h1>Mi rutina semanal</h1>
           </div>
-        ))}
-      </div>
-    </section>
+
+          <div className="semana">
+            {semana.map((dia) => (
+              <div className="dia" key={dia.diaSemana}>
+                <div className="dia-header">
+                  <h2>{dia.nombreDia}</h2>
+                  <button type="button" onClick={() => alternarFormulario(dia.diaSemana)}>
+                    {diaFormularioAbierto === dia.diaSemana ? 'Cancelar' : '+ Agregar ejercicio'}
+                  </button>
+                </div>
+
+                {dia.ejercicios.length === 0 ? (
+                  <p className="dia-vacio">Sin ejercicios</p>
+                ) : (
+                  <ul className="lista-ejercicios">
+                    {dia.ejercicios.map((ejercicio) => (
+                      <li key={ejercicio.id}>
+                        <span className="nombre">{ejercicio.nombreEjercicio}</span>
+                        <span className="grupo">
+                          {ejercicio.seriesObjetivo} series × {ejercicio.repeticionesObjetivo} reps
+                        </span>
+                        <button type="button" onClick={() => handleQuitar(dia.diaSemana, ejercicio.id)}>
+                          Quitar
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {diaFormularioAbierto === dia.diaSemana && (
+                  <form className="auth-form" onSubmit={(event) => handleAgregar(event, dia.diaSemana)} noValidate>
+                    <label htmlFor={`ejercicio-${dia.diaSemana}`}>Ejercicio</label>
+                    <select
+                      id={`ejercicio-${dia.diaSemana}`}
+                      value={ejercicioSeleccionado}
+                      onChange={(event) => setEjercicioSeleccionado(event.target.value)}
+                    >
+                      {ejerciciosDisponibles.map((ejercicio) => (
+                        <option key={ejercicio.id} value={ejercicio.id}>
+                          {ejercicio.nombre} ({ejercicio.grupoMuscular})
+                        </option>
+                      ))}
+                    </select>
+
+                    <label htmlFor={`series-${dia.diaSemana}`}>Series</label>
+                    <input
+                      id={`series-${dia.diaSemana}`}
+                      type="number"
+                      min={1}
+                      value={series}
+                      onChange={(event) => setSeries(event.target.value)}
+                    />
+
+                    <label htmlFor={`reps-${dia.diaSemana}`}>Repeticiones</label>
+                    <input
+                      id={`reps-${dia.diaSemana}`}
+                      type="number"
+                      min={1}
+                      value={repeticiones}
+                      onChange={(event) => setRepeticiones(event.target.value)}
+                    />
+
+                    {error && <p className="field-error">{error}</p>}
+
+                    <button type="submit" disabled={guardando}>
+                      {guardando ? 'Agregando...' : 'Agregar'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+    </>
   )
 }

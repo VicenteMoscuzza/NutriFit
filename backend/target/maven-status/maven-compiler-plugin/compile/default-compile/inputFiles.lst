@@ -6,6 +6,15 @@ C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifi
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\EjercicioController.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\EjercicioRepository.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\EjercicioService.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\dto\EjercicioEntrenamientoResponse.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\dto\EntrenamientoHoyResponse.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\dto\RegistrarSerieRequest.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\dto\SerieEntrenamientoResponse.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\EntrenamientoController.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\EntrenamientoService.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\SerieEntrenamiento.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\SerieEntrenamientoNoEncontradaException.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\SerieEntrenamientoRepository.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\NutrifitBackendApplication.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\DiaRutina.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\DiaRutinaRepository.java

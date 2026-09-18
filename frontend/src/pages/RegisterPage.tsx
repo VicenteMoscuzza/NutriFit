@@ -50,37 +50,41 @@ export default function RegisterPage() {
 
   return (
     <section className="auth">
-      <h1>Crear cuenta</h1>
-      <form className="auth-form" onSubmit={handleSubmit} noValidate>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          autoComplete="email"
-        />
-        {errores.email && <p className="field-error">{errores.email}</p>}
+      <div className="auth-card">
+        <span className="auth-logo">N</span>
+        <h1>Crear cuenta</h1>
+        <p className="auth-subtitle">Empezá a organizar tus rutinas hoy.</p>
+        <form className="auth-form" onSubmit={handleSubmit} noValidate>
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+          />
+          {errores.email && <p className="field-error">{errores.email}</p>}
 
-        <label htmlFor="contrasena">Contraseña</label>
-        <input
-          id="contrasena"
-          type="password"
-          value={contrasena}
-          onChange={(event) => setContrasena(event.target.value)}
-          autoComplete="new-password"
-        />
-        {errores.contrasena && <p className="field-error">{errores.contrasena}</p>}
+          <label htmlFor="contrasena">Contraseña</label>
+          <input
+            id="contrasena"
+            type="password"
+            value={contrasena}
+            onChange={(event) => setContrasena(event.target.value)}
+            autoComplete="new-password"
+          />
+          {errores.contrasena && <p className="field-error">{errores.contrasena}</p>}
 
-        {errores.general && <p className="field-error">{errores.general}</p>}
+          {errores.general && <p className="field-error">{errores.general}</p>}
 
-        <button type="submit" disabled={enviando}>
-          {enviando ? 'Creando cuenta...' : 'Registrarme'}
-        </button>
-      </form>
-      <p>
-        ¿Ya tenés cuenta? <Link to="/login">Iniciar sesión</Link>
-      </p>
+          <button type="submit" disabled={enviando}>
+            {enviando ? 'Creando cuenta...' : 'Registrarme'}
+          </button>
+        </form>
+        <p className="auth-footer">
+          ¿Ya tenés cuenta? <Link to="/login">Iniciar sesión</Link>
+        </p>
+      </div>
     </section>
   )
 }
