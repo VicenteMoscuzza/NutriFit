@@ -38,7 +38,8 @@
   outline-offset: 1px;
 }
 
-.auth button {
+.auth button,
+.page button {
   font: inherit;
   margin-top: 18px;
   padding: 10px 16px;
@@ -49,7 +50,8 @@
   cursor: pointer;
 }
 
-.auth button:disabled {
+.auth button:disabled,
+.page button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -120,4 +122,62 @@
 .etiqueta-propio {
   background: var(--accent-bg);
   color: var(--accent);
+}
+
+.semana {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 960px;
+  margin-top: 16px;
+  text-align: left;
+}
+
+.dia {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.dia-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dia-header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.dia-header button {
+  margin-top: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.dia-vacio {
+  color: var(--text);
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+.dia .lista-ejercicios {
+  max-width: none;
+  margin-top: 12px;
+}
+
+.dia .lista-ejercicios li {
+  flex-wrap: wrap;
+}
+
+.dia .lista-ejercicios button {
+  margin-top: 0;
+  padding: 4px 10px;
+  font-size: 13px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
 }

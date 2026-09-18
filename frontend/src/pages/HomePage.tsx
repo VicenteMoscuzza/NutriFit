@@ -17,6 +17,9 @@ export default function HomePage() {
       <p>
         <Link to="/ejercicios">Ver mis ejercicios</Link>
       </p>
+      <p>
+        <Link to="/rutina">Ver mi rutina semanal</Link>
+      </p>
       <button type="button" onClick={handleLogout}>
         Cerrar sesión
       </button>
