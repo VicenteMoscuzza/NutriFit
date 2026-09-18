@@ -50,6 +50,11 @@ public class UsuarioService {
                 .orElseThrow(CredencialesInvalidasException::new);
     }
 
+    public Usuario obtenerEntidadAutenticada(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(CredencialesInvalidasException::new);
+    }
+
     public record SesionIniciada(String token, UsuarioResponse usuario) {
     }
 }

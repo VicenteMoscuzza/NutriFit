@@ -1,5 +1,11 @@
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\api\ApiExceptionHandler.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\config\SecurityConfig.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\dto\CrearEjercicioRequest.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\dto\EjercicioResponse.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\Ejercicio.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\EjercicioController.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\EjercicioRepository.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\EjercicioService.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\NutrifitBackendApplication.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\security\JwtAuthenticationFilter.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\security\JwtService.java

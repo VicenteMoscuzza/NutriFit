@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "usuarios")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,9 +25,9 @@ public class Usuario {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "password_hash", nullable = false)
     private String contrasena;
 
-    @Column(name = "fecha_registro", nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime fechaRegistro = LocalDateTime.now();
 }
