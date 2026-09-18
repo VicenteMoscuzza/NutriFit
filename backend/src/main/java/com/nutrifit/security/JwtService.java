@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
+    public static final String COOKIE_SESION = "nutrifit_token";
+
     private final SecretKey clave;
     private final Duration expiracion;
 
@@ -33,6 +35,10 @@ public class JwtService {
                 .expiration(expira)
                 .signWith(clave)
                 .compact();
+    }
+
+    public Duration getExpiracion() {
+        return expiracion;
     }
 
     public String extraerEmail(String token) {

@@ -5,11 +5,6 @@ export interface Usuario {
   email: string
 }
 
-export interface LoginResponse {
-  token: string
-  tipo: string
-}
-
 export function registrarUsuario(email: string, contrasena: string) {
   return apiFetch<Usuario>('/api/auth/registro', {
     method: 'POST',
@@ -18,8 +13,16 @@ export function registrarUsuario(email: string, contrasena: string) {
 }
 
 export function iniciarSesion(email: string, contrasena: string) {
-  return apiFetch<LoginResponse>('/api/auth/login', {
+  return apiFetch<Usuario>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, contrasena }),
   })
+}
+
+export function cerrarSesion() {
+  return apiFetch<void>('/api/auth/logout', { method: 'POST' })
+}
+
+export function obtenerUsuarioActual() {
+  return apiFetch<Usuario>('/api/auth/me')
 }

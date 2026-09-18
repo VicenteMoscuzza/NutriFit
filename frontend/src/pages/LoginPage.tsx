@@ -2,10 +2,11 @@ import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { iniciarSesion } from '../api/auth'
 import { ApiError } from '../api/client'
-import { guardarToken } from '../api/token'
+import { useAuth } from '../auth/AuthContext'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { setUsuario } = useAuth()
   const [email, setEmail] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [errorGeneral, setErrorGeneral] = useState('')
@@ -17,8 +18,8 @@ export default function LoginPage() {
     setErrorGeneral('')
     setEnviando(true)
     try {
-      const { token } = await iniciarSesion(email, contrasena)
-      guardarToken(token)
+      const usuario = await iniciarSesion(email, contrasena)
+      setUsuario(usuario)
       navigate('/')
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {

@@ -2,7 +2,6 @@ package com.nutrifit.usuarios;
 
 import com.nutrifit.security.JwtService;
 import com.nutrifit.usuarios.dto.LoginRequest;
-import com.nutrifit.usuarios.dto.LoginResponse;
 import com.nutrifit.usuarios.dto.RegistroUsuarioRequest;
 import com.nutrifit.usuarios.dto.UsuarioResponse;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,7 @@ public class UsuarioService {
         return UsuarioResponse.desde(usuarioRepository.save(usuario));
     }
 
-    public LoginResponse iniciarSesion(LoginRequest request) {
+    public SesionIniciada iniciarSesion(LoginRequest request) {
         String email = request.email().trim().toLowerCase();
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(CredencialesInvalidasException::new);
@@ -41,6 +40,16 @@ public class UsuarioService {
             throw new CredencialesInvalidasException();
         }
 
-        return LoginResponse.deToken(jwtService.generarToken(usuario.getEmail()));
+        String token = jwtService.generarToken(usuario.getEmail());
+        return new SesionIniciada(token, UsuarioResponse.desde(usuario));
+    }
+
+    public UsuarioResponse obtenerPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
+                .map(UsuarioResponse::desde)
+                .orElseThrow(CredencialesInvalidasException::new);
+    }
+
+    public record SesionIniciada(String token, UsuarioResponse usuario) {
     }
 }
