@@ -4,7 +4,6 @@ import { useAuth } from '../auth/AuthContext'
 const NAV_LINKS = [
   { to: '/', label: 'Inicio' },
   { to: '/entrenamiento', label: 'Hoy' },
-  { to: '/ejercicios', label: 'Ejercicios' },
   { to: '/rutina', label: 'Rutina' },
 ]
 

@@ -612,3 +612,81 @@
   transform: none;
   box-shadow: none;
 }
+
+/* Routine day management */
+.dia-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dia-acciones button {
+  margin-top: 0;
+}
+
+.btn-quitar-dia {
+  padding: 6px 12px;
+  font-size: 13px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.btn-quitar-dia:hover {
+  color: var(--danger);
+  border-color: var(--danger-bg);
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-agregar-dia {
+  margin-top: 20px;
+  padding: 12px 16px;
+  width: 100%;
+  max-width: 280px;
+  background: transparent;
+  color: var(--text);
+  border: 1px dashed var(--border);
+  box-shadow: none;
+}
+
+.btn-agregar-dia:hover:not(:disabled) {
+  color: var(--accent-light);
+  border-color: var(--accent-border);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Day selector on the "Hoy" page */
+.dia-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.dia-tab {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border-soft);
+  box-shadow: none;
+  margin-top: 0;
+}
+
+.dia-tab:hover {
+  color: var(--text-h);
+  transform: none;
+  box-shadow: none;
+}
+
+.dia-tab-activo,
+.dia-tab-activo:hover {
+  background: var(--accent-bg);
+  color: var(--accent-light);
+  border-color: var(--accent-border);
+}

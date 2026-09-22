@@ -20,15 +20,10 @@ export default function HomePage() {
             <h2>Entrenamiento de hoy</h2>
             <p>Registrá el peso y las repeticiones de cada serie en vivo.</p>
           </Link>
-          <Link to="/ejercicios" className="dashboard-card">
-            <span className="dashboard-icon">🏋️</span>
-            <h2>Mis ejercicios</h2>
-            <p>Gestioná tu catálogo de ejercicios propios y globales.</p>
-          </Link>
           <Link to="/rutina" className="dashboard-card">
             <span className="dashboard-icon">📅</span>
-            <h2>Rutina semanal</h2>
-            <p>Organizá tus ejercicios día por día.</p>
+            <h2>Mi rutina</h2>
+            <p>Organizá tus días de entrenamiento y sus ejercicios.</p>
           </Link>
         </div>
       </main>

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import Navbar from '../components/Navbar'
 import { ApiError } from '../api/client'
+import { obtenerDias, type DiaRutina } from '../api/rutinas'
 import {
   eliminarSerie,
-  obtenerEntrenamientoDeHoy,
+  obtenerEntrenamientoDelDia,
   registrarSerie,
   type EjercicioEntrenamiento,
-  type EntrenamientoHoy,
+  type EntrenamientoDia,
 } from '../api/entrenamiento'
 
 interface FilaPendiente {
@@ -32,14 +33,34 @@ function filasIniciales(ejercicio: EjercicioEntrenamiento): FilaPendiente[] {
 }
 
 export default function EntrenamientoHoyPage() {
-  const [entrenamiento, setEntrenamiento] = useState<EntrenamientoHoy | null>(null)
+  const [dias, setDias] = useState<DiaRutina[]>([])
+  const [diaSeleccionado, setDiaSeleccionado] = useState<number | null>(null)
+  const [entrenamiento, setEntrenamiento] = useState<EntrenamientoDia | null>(null)
   const [pendientes, setPendientes] = useState<Record<number, FilaPendiente[]>>({})
-  const [cargando, setCargando] = useState(true)
+  const [cargandoDias, setCargandoDias] = useState(true)
+  const [cargandoEntrenamiento, setCargandoEntrenamiento] = useState(false)
   const [guardandoKey, setGuardandoKey] = useState<string | null>(null)
   const [errores, setErrores] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    obtenerEntrenamientoDeHoy()
+    obtenerDias()
+      .then((data) => {
+        setDias(data)
+        if (data.length === 1) {
+          setDiaSeleccionado(data[0].id)
+        }
+      })
+      .finally(() => setCargandoDias(false))
+  }, [])
+
+  useEffect(() => {
+    if (diaSeleccionado === null) {
+      setEntrenamiento(null)
+      return
+    }
+
+    setCargandoEntrenamiento(true)
+    obtenerEntrenamientoDelDia(diaSeleccionado)
       .then((data) => {
         setEntrenamiento(data)
         const inicial: Record<number, FilaPendiente[]> = {}
@@ -48,8 +69,8 @@ export default function EntrenamientoHoyPage() {
         })
         setPendientes(inicial)
       })
-      .finally(() => setCargando(false))
-  }, [])
+      .finally(() => setCargandoEntrenamiento(false))
+  }, [diaSeleccionado])
 
   function actualizarFila(ejercicioRutinaId: number, key: string, campo: 'peso' | 'repeticiones', valor: string) {
     setPendientes((actual) => ({
@@ -149,95 +170,116 @@ export default function EntrenamientoHoyPage() {
             <h1>Entrenamiento de hoy</h1>
           </div>
 
-          {cargando ? (
-            <p>Cargando entrenamiento...</p>
-          ) : !entrenamiento || entrenamiento.ejercicios.length === 0 ? (
-            <p className="dia-vacio">
-              No tenés ejercicios planificados para hoy ({entrenamiento?.nombreDia ?? ''}).
-            </p>
+          {cargandoDias ? (
+            <p>Cargando días...</p>
+          ) : dias.length === 0 ? (
+            <p className="dia-vacio">Todavía no tenés días de entrenamiento. Creá tu rutina primero.</p>
           ) : (
-            <div className="entrenamiento-lista">
-              {entrenamiento.ejercicios.map((ejercicio) => (
-                <article className="entrenamiento-card" key={ejercicio.ejercicioRutinaId}>
-                  <div className="entrenamiento-card-header">
-                    <h2>{ejercicio.nombreEjercicio}</h2>
-                    <span className="grupo">{ejercicio.grupoMuscular}</span>
-                  </div>
-                  <p className="entrenamiento-objetivo">
-                    Objetivo: {ejercicio.seriesObjetivo} series × {ejercicio.repeticionesObjetivo} reps
-                  </p>
-
-                  <div className="series-lista">
-                    {ejercicio.series.map((serie) => (
-                      <div className="serie-fila serie-completa" key={serie.id}>
-                        <span className="serie-numero">{serie.numeroSerie}</span>
-                        <span className="serie-dato">{serie.pesoKg} kg</span>
-                        <span className="serie-dato">{serie.repeticiones} reps</span>
-                        <button
-                          type="button"
-                          className="btn-icon"
-                          aria-label="Eliminar serie"
-                          onClick={() => handleEliminarSerieGuardada(ejercicio.ejercicioRutinaId, serie.id)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-
-                    {(pendientes[ejercicio.ejercicioRutinaId] ?? []).map((fila, index) => (
-                      <div className="serie-fila" key={fila.key}>
-                        <span className="serie-numero">{ejercicio.series.length + index + 1}</span>
-                        <input
-                          className="serie-input"
-                          type="number"
-                          inputMode="decimal"
-                          step="0.5"
-                          min="0"
-                          placeholder="Peso (kg)"
-                          value={fila.peso}
-                          onChange={(event) =>
-                            actualizarFila(ejercicio.ejercicioRutinaId, fila.key, 'peso', event.target.value)
-                          }
-                        />
-                        <input
-                          className="serie-input"
-                          type="number"
-                          inputMode="numeric"
-                          step="1"
-                          min="1"
-                          placeholder="Reps"
-                          value={fila.repeticiones}
-                          onChange={(event) =>
-                            actualizarFila(ejercicio.ejercicioRutinaId, fila.key, 'repeticiones', event.target.value)
-                          }
-                        />
-                        <button
-                          type="button"
-                          className="btn-icon"
-                          aria-label="Quitar serie"
-                          onClick={() => quitarFilaPendiente(ejercicio.ejercicioRutinaId, fila.key)}
-                        >
-                          ✕
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-completar"
-                          disabled={guardandoKey === fila.key}
-                          onClick={() => completarSerie(ejercicio.ejercicioRutinaId, fila)}
-                        >
-                          {guardandoKey === fila.key ? 'Guardando...' : 'Completar serie'}
-                        </button>
-                        {errores[fila.key] && <p className="field-error serie-error">{errores[fila.key]}</p>}
-                      </div>
-                    ))}
-                  </div>
-
-                  <button type="button" className="btn-agregar-serie" onClick={() => agregarFila(ejercicio)}>
-                    + Agregar serie
+            <>
+              <div className="dia-selector">
+                {dias.map((dia) => (
+                  <button
+                    key={dia.id}
+                    type="button"
+                    className={diaSeleccionado === dia.id ? 'dia-tab dia-tab-activo' : 'dia-tab'}
+                    onClick={() => setDiaSeleccionado(dia.id)}
+                  >
+                    Día {dia.numero}
                   </button>
-                </article>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {diaSeleccionado === null ? (
+                <p className="dia-vacio">Elegí un día para empezar a registrar tus series.</p>
+              ) : cargandoEntrenamiento ? (
+                <p>Cargando entrenamiento...</p>
+              ) : !entrenamiento || entrenamiento.ejercicios.length === 0 ? (
+                <p className="dia-vacio">Este día todavía no tiene ejercicios. Agregalos desde Rutina.</p>
+              ) : (
+                <div className="entrenamiento-lista">
+                  {entrenamiento.ejercicios.map((ejercicio) => (
+                    <article className="entrenamiento-card" key={ejercicio.ejercicioRutinaId}>
+                      <div className="entrenamiento-card-header">
+                        <h2>{ejercicio.nombreEjercicio}</h2>
+                        <span className="grupo">{ejercicio.grupoMuscular}</span>
+                      </div>
+                      <p className="entrenamiento-objetivo">
+                        Objetivo: {ejercicio.seriesObjetivo} series × {ejercicio.repeticionesObjetivo} reps
+                      </p>
+
+                      <div className="series-lista">
+                        {ejercicio.series.map((serie) => (
+                          <div className="serie-fila serie-completa" key={serie.id}>
+                            <span className="serie-numero">{serie.numeroSerie}</span>
+                            <span className="serie-dato">{serie.pesoKg} kg</span>
+                            <span className="serie-dato">{serie.repeticiones} reps</span>
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              aria-label="Eliminar serie"
+                              onClick={() => handleEliminarSerieGuardada(ejercicio.ejercicioRutinaId, serie.id)}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+
+                        {(pendientes[ejercicio.ejercicioRutinaId] ?? []).map((fila, index) => (
+                          <div className="serie-fila" key={fila.key}>
+                            <span className="serie-numero">{ejercicio.series.length + index + 1}</span>
+                            <input
+                              className="serie-input"
+                              type="number"
+                              inputMode="decimal"
+                              step="0.5"
+                              min="0"
+                              placeholder="Peso (kg)"
+                              value={fila.peso}
+                              onChange={(event) =>
+                                actualizarFila(ejercicio.ejercicioRutinaId, fila.key, 'peso', event.target.value)
+                              }
+                            />
+                            <input
+                              className="serie-input"
+                              type="number"
+                              inputMode="numeric"
+                              step="1"
+                              min="1"
+                              placeholder="Reps"
+                              value={fila.repeticiones}
+                              onChange={(event) =>
+                                actualizarFila(ejercicio.ejercicioRutinaId, fila.key, 'repeticiones', event.target.value)
+                              }
+                            />
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              aria-label="Quitar serie"
+                              onClick={() => quitarFilaPendiente(ejercicio.ejercicioRutinaId, fila.key)}
+                            >
+                              ✕
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-completar"
+                              disabled={guardandoKey === fila.key}
+                              onClick={() => completarSerie(ejercicio.ejercicioRutinaId, fila)}
+                            >
+                              {guardandoKey === fila.key ? 'Guardando...' : 'Completar serie'}
+                            </button>
+                            {errores[fila.key] && <p className="field-error serie-error">{errores[fila.key]}</p>}
+                          </div>
+                        ))}
+                      </div>
+
+                      <button type="button" className="btn-agregar-serie" onClick={() => agregarFila(ejercicio)}>
+                        + Agregar serie
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>

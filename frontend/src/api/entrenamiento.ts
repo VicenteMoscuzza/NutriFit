@@ -17,14 +17,14 @@ export interface EjercicioEntrenamiento {
   series: SerieRegistrada[]
 }
 
-export interface EntrenamientoHoy {
-  diaSemana: number
-  nombreDia: string
+export interface EntrenamientoDia {
+  diaId: number
+  numero: number
   ejercicios: EjercicioEntrenamiento[]
 }
 
-export function obtenerEntrenamientoDeHoy() {
-  return apiFetch<EntrenamientoHoy>('/api/entrenamiento/hoy')
+export function obtenerEntrenamientoDelDia(diaId: number) {
+  return apiFetch<EntrenamientoDia>(`/api/entrenamiento/dias/${diaId}`)
 }
 
 export function registrarSerie(ejercicioRutinaId: number, pesoKg: number, repeticiones: number) {

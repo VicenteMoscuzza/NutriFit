@@ -9,23 +9,31 @@ export interface EjercicioRutina {
   repeticionesObjetivo: number
 }
 
-export interface DiaSemana {
-  diaSemana: number
-  nombreDia: string
+export interface DiaRutina {
+  id: number
+  numero: number
   ejercicios: EjercicioRutina[]
 }
 
-export function obtenerSemana() {
-  return apiFetch<DiaSemana[]>('/api/rutinas/semana')
+export function obtenerDias() {
+  return apiFetch<DiaRutina[]>('/api/rutinas/dias')
+}
+
+export function crearDia() {
+  return apiFetch<DiaRutina>('/api/rutinas/dias', { method: 'POST' })
+}
+
+export function eliminarDia(id: number) {
+  return apiFetch<void>(`/api/rutinas/dias/${id}`, { method: 'DELETE' })
 }
 
 export function agregarEjercicioADia(
-  diaSemana: number,
+  diaId: number,
   ejercicioId: number,
   seriesObjetivo: number,
   repeticionesObjetivo: number,
 ) {
-  return apiFetch<EjercicioRutina>(`/api/rutinas/dias/${diaSemana}/ejercicios`, {
+  return apiFetch<EjercicioRutina>(`/api/rutinas/dias/${diaId}/ejercicios`, {
     method: 'POST',
     body: JSON.stringify({ ejercicioId, seriesObjetivo, repeticionesObjetivo }),
   })
