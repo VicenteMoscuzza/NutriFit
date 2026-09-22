@@ -11,6 +11,13 @@ public interface EjercicioRutinaRepository extends JpaRepository<EjercicioRutina
             + "join fetch er.ejercicio "
             + "join fetch er.diaRutina "
             + "where er.diaRutina.rutina.id = :rutinaId "
-            + "order by er.diaRutina.diaSemana asc, er.id asc")
+            + "order by er.diaRutina.numero asc, er.id asc")
     List<EjercicioRutina> buscarPorRutina(@Param("rutinaId") Long rutinaId);
+
+    @Query("select er from EjercicioRutina er "
+            + "join fetch er.ejercicio "
+            + "join fetch er.diaRutina "
+            + "where er.diaRutina.id = :diaRutinaId "
+            + "order by er.id asc")
+    List<EjercicioRutina> buscarPorDia(@Param("diaRutinaId") Long diaRutinaId);
 }

@@ -1,13 +1,15 @@
 package com.nutrifit.entrenamiento;
 
 import com.nutrifit.entrenamiento.dto.EjercicioEntrenamientoResponse;
-import com.nutrifit.entrenamiento.dto.EntrenamientoHoyResponse;
+import com.nutrifit.entrenamiento.dto.EntrenamientoDiaResponse;
 import com.nutrifit.entrenamiento.dto.RegistrarSerieRequest;
 import com.nutrifit.entrenamiento.dto.SerieEntrenamientoResponse;
+import com.nutrifit.rutinas.DiaRutina;
+import com.nutrifit.rutinas.DiaRutinaNoEncontradoException;
+import com.nutrifit.rutinas.DiaRutinaRepository;
 import com.nutrifit.rutinas.EjercicioRutina;
 import com.nutrifit.rutinas.EjercicioRutinaNoEncontradoException;
 import com.nutrifit.rutinas.EjercicioRutinaRepository;
-import com.nutrifit.rutinas.RutinaRepository;
 import com.nutrifit.usuarios.Usuario;
 import com.nutrifit.usuarios.UsuarioService;
 import java.time.LocalDate;
@@ -22,26 +24,18 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class EntrenamientoService {
 
-    private static final String[] NOMBRES_DIAS = {
-        "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
-    };
-
-    private final RutinaRepository rutinaRepository;
+    private final DiaRutinaRepository diaRutinaRepository;
     private final EjercicioRutinaRepository ejercicioRutinaRepository;
     private final SerieEntrenamientoRepository serieEntrenamientoRepository;
     private final UsuarioService usuarioService;
 
-    public EntrenamientoHoyResponse obtenerEntrenamientoDeHoy(String email) {
+    public EntrenamientoDiaResponse obtenerEntrenamientoDelDia(String email, Long diaId) {
         Usuario usuario = usuarioService.obtenerEntidadAutenticada(email);
-        LocalDate hoy = LocalDate.now();
-        int diaSemana = hoy.getDayOfWeek().getValue();
+        DiaRutina dia = diaRutinaRepository.findByIdAndRutinaUsuarioId(diaId, usuario.getId())
+                .orElseThrow(DiaRutinaNoEncontradoException::new);
 
-        List<EjercicioRutina> ejerciciosDelDia = rutinaRepository.findByUsuarioId(usuario.getId())
-                .map(rutina -> ejercicioRutinaRepository.buscarPorRutina(rutina.getId()))
-                .orElse(List.of())
-                .stream()
-                .filter(er -> er.getDiaRutina().getDiaSemana() == diaSemana)
-                .toList();
+        LocalDate hoy = LocalDate.now();
+        List<EjercicioRutina> ejerciciosDelDia = ejercicioRutinaRepository.buscarPorDia(dia.getId());
 
         Map<Long, List<SerieEntrenamiento>> seriesPorEjercicio = serieEntrenamientoRepository
                 .buscarPorUsuarioYFecha(usuario.getId(), hoy)
@@ -61,7 +55,7 @@ public class EntrenamientoService {
                                 .toList()))
                 .toList();
 
-        return new EntrenamientoHoyResponse(diaSemana, NOMBRES_DIAS[diaSemana - 1], ejercicios);
+        return new EntrenamientoDiaResponse(dia.getId(), dia.getNumero(), ejercicios);
     }
 
     @Transactional

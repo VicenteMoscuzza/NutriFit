@@ -1,7 +1,7 @@
 package com.nutrifit.rutinas;
 
 import com.nutrifit.rutinas.dto.AgregarEjercicioRutinaRequest;
-import com.nutrifit.rutinas.dto.DiaSemanaResponse;
+import com.nutrifit.rutinas.dto.DiaRutinaResponse;
 import com.nutrifit.rutinas.dto.EjercicioRutinaResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,17 +24,29 @@ public class RutinaController {
 
     private final RutinaService rutinaService;
 
-    @GetMapping("/semana")
-    public ResponseEntity<List<DiaSemanaResponse>> obtenerSemana(Authentication authentication) {
-        return ResponseEntity.ok(rutinaService.obtenerSemana(authentication.getName()));
+    @GetMapping("/dias")
+    public ResponseEntity<List<DiaRutinaResponse>> obtenerDias(Authentication authentication) {
+        return ResponseEntity.ok(rutinaService.obtenerDias(authentication.getName()));
     }
 
-    @PostMapping("/dias/{diaSemana}/ejercicios")
+    @PostMapping("/dias")
+    public ResponseEntity<DiaRutinaResponse> agregarDia(Authentication authentication) {
+        DiaRutinaResponse creado = rutinaService.agregarDia(authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @DeleteMapping("/dias/{diaId}")
+    public ResponseEntity<Void> eliminarDia(Authentication authentication, @PathVariable Long diaId) {
+        rutinaService.eliminarDia(authentication.getName(), diaId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/dias/{diaId}/ejercicios")
     public ResponseEntity<EjercicioRutinaResponse> agregarEjercicio(
             Authentication authentication,
-            @PathVariable int diaSemana,
+            @PathVariable Long diaId,
             @Valid @RequestBody AgregarEjercicioRutinaRequest request) {
-        EjercicioRutinaResponse creado = rutinaService.agregarEjercicio(authentication.getName(), diaSemana, request);
+        EjercicioRutinaResponse creado = rutinaService.agregarEjercicio(authentication.getName(), diaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 

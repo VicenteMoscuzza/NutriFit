@@ -31,6 +31,6 @@ public class DiaRutina {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Rutina rutina;
 
-    @Column(name = "day_of_week", nullable = false)
-    private Short diaSemana;
+    @Column(name = "day_number", nullable = false)
+    private Integer numero;
 }

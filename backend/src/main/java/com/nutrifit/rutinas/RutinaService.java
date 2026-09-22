@@ -3,14 +3,13 @@ package com.nutrifit.rutinas;
 import com.nutrifit.ejercicios.Ejercicio;
 import com.nutrifit.ejercicios.EjercicioRepository;
 import com.nutrifit.rutinas.dto.AgregarEjercicioRutinaRequest;
-import com.nutrifit.rutinas.dto.DiaSemanaResponse;
+import com.nutrifit.rutinas.dto.DiaRutinaResponse;
 import com.nutrifit.rutinas.dto.EjercicioRutinaResponse;
 import com.nutrifit.usuarios.Usuario;
 import com.nutrifit.usuarios.UsuarioService;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,51 +18,68 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RutinaService {
 
-    private static final String[] NOMBRES_DIAS = {
-        "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
-    };
-
     private final RutinaRepository rutinaRepository;
     private final DiaRutinaRepository diaRutinaRepository;
     private final EjercicioRutinaRepository ejercicioRutinaRepository;
     private final EjercicioRepository ejercicioRepository;
     private final UsuarioService usuarioService;
 
-    public List<DiaSemanaResponse> obtenerSemana(String email) {
+    public List<DiaRutinaResponse> obtenerDias(String email) {
         Usuario usuario = usuarioService.obtenerEntidadAutenticada(email);
 
-        Map<Short, List<EjercicioRutina>> ejerciciosPorDia = rutinaRepository.findByUsuarioId(usuario.getId())
+        List<DiaRutina> dias = rutinaRepository.findByUsuarioId(usuario.getId())
+                .map(rutina -> diaRutinaRepository.findByRutinaIdOrderByNumeroAsc(rutina.getId()))
+                .orElse(List.of());
+
+        Map<Long, List<EjercicioRutinaResponse>> ejerciciosPorDia = rutinaRepository.findByUsuarioId(usuario.getId())
                 .map(rutina -> ejercicioRutinaRepository.buscarPorRutina(rutina.getId()))
                 .orElse(List.of())
                 .stream()
-                .collect(Collectors.groupingBy(er -> er.getDiaRutina().getDiaSemana()));
+                .collect(Collectors.groupingBy(
+                        er -> er.getDiaRutina().getId(),
+                        Collectors.mapping(EjercicioRutinaResponse::desde, Collectors.toList())));
 
-        return IntStream.rangeClosed(1, 7)
-                .mapToObj(dia -> new DiaSemanaResponse(
-                        dia,
-                        NOMBRES_DIAS[dia - 1],
-                        ejerciciosPorDia.getOrDefault((short) dia, List.of()).stream()
-                                .map(EjercicioRutinaResponse::desde)
-                                .toList()))
+        return dias.stream()
+                .map(dia -> DiaRutinaResponse.desde(dia, ejerciciosPorDia.getOrDefault(dia.getId(), List.of())))
                 .toList();
     }
 
     @Transactional
-    public EjercicioRutinaResponse agregarEjercicio(String email, int diaSemana, AgregarEjercicioRutinaRequest request) {
-        if (diaSemana < 1 || diaSemana > 7) {
-            throw new DiaSemanaInvalidoException();
-        }
-
+    public DiaRutinaResponse agregarDia(String email) {
         Usuario usuario = usuarioService.obtenerEntidadAutenticada(email);
-        Ejercicio ejercicio = ejercicioRepository.findById(request.ejercicioId())
-                .filter(e -> e.isEsGlobal() || esPropietario(e, usuario))
-                .orElseThrow(EjercicioNoDisponibleException::new);
-
         Rutina rutina = rutinaRepository.findByUsuarioId(usuario.getId())
                 .orElseGet(() -> crearRutina(usuario));
 
-        DiaRutina diaRutina = diaRutinaRepository.findByRutinaIdAndDiaSemana(rutina.getId(), (short) diaSemana)
-                .orElseGet(() -> crearDia(rutina, (short) diaSemana));
+        int siguienteNumero = diaRutinaRepository.countByRutinaId(rutina.getId()) + 1;
+        DiaRutina dia = crearDia(rutina, siguienteNumero);
+        return DiaRutinaResponse.desde(dia, List.of());
+    }
+
+    @Transactional
+    public void eliminarDia(String email, Long diaId) {
+        Usuario usuario = usuarioService.obtenerEntidadAutenticada(email);
+        DiaRutina dia = diaRutinaRepository.findByIdAndRutinaUsuarioId(diaId, usuario.getId())
+                .orElseThrow(DiaRutinaNoEncontradoException::new);
+
+        Long rutinaId = dia.getRutina().getId();
+        diaRutinaRepository.delete(dia);
+
+        List<DiaRutina> restantes = diaRutinaRepository.findByRutinaIdOrderByNumeroAsc(rutinaId);
+        for (int i = 0; i < restantes.size(); i++) {
+            restantes.get(i).setNumero(i + 1);
+        }
+        diaRutinaRepository.saveAll(restantes);
+    }
+
+    @Transactional
+    public EjercicioRutinaResponse agregarEjercicio(String email, Long diaId, AgregarEjercicioRutinaRequest request) {
+        Usuario usuario = usuarioService.obtenerEntidadAutenticada(email);
+        DiaRutina diaRutina = diaRutinaRepository.findByIdAndRutinaUsuarioId(diaId, usuario.getId())
+                .orElseThrow(DiaRutinaNoEncontradoException::new);
+
+        Ejercicio ejercicio = ejercicioRepository.findById(request.ejercicioId())
+                .filter(e -> e.isEsGlobal() || esPropietario(e, usuario))
+                .orElseThrow(EjercicioNoDisponibleException::new);
 
         EjercicioRutina ejercicioRutina = new EjercicioRutina();
         ejercicioRutina.setDiaRutina(diaRutina);
@@ -98,10 +114,10 @@ public class RutinaService {
         return rutinaRepository.save(rutina);
     }
 
-    private DiaRutina crearDia(Rutina rutina, short diaSemana) {
+    private DiaRutina crearDia(Rutina rutina, int numero) {
         DiaRutina dia = new DiaRutina();
         dia.setRutina(rutina);
-        dia.setDiaSemana(diaSemana);
+        dia.setNumero(numero);
         return diaRutinaRepository.save(dia);
     }
 }

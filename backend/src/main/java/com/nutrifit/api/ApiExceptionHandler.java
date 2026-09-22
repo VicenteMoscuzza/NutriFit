@@ -1,7 +1,7 @@
 package com.nutrifit.api;
 
 import com.nutrifit.entrenamiento.SerieEntrenamientoNoEncontradaException;
-import com.nutrifit.rutinas.DiaSemanaInvalidoException;
+import com.nutrifit.rutinas.DiaRutinaNoEncontradoException;
 import com.nutrifit.rutinas.EjercicioNoDisponibleException;
 import com.nutrifit.rutinas.EjercicioRutinaNoEncontradoException;
 import com.nutrifit.usuarios.CredencialesInvalidasException;
@@ -41,9 +41,9 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("mensaje", ex.getMessage()));
     }
 
-    @ExceptionHandler(DiaSemanaInvalidoException.class)
-    public ResponseEntity<Map<String, Object>> manejarDiaSemanaInvalido(DiaSemanaInvalidoException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("mensaje", ex.getMessage()));
+    @ExceptionHandler(DiaRutinaNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarDiaRutinaNoEncontrado(DiaRutinaNoEncontradoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
     }
 
     @ExceptionHandler(EjercicioNoDisponibleException.class)

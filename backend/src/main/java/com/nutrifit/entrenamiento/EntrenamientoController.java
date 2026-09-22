@@ -1,6 +1,6 @@
 package com.nutrifit.entrenamiento;
 
-import com.nutrifit.entrenamiento.dto.EntrenamientoHoyResponse;
+import com.nutrifit.entrenamiento.dto.EntrenamientoDiaResponse;
 import com.nutrifit.entrenamiento.dto.RegistrarSerieRequest;
 import com.nutrifit.entrenamiento.dto.SerieEntrenamientoResponse;
 import jakarta.validation.Valid;
@@ -23,9 +23,9 @@ public class EntrenamientoController {
 
     private final EntrenamientoService entrenamientoService;
 
-    @GetMapping("/hoy")
-    public ResponseEntity<EntrenamientoHoyResponse> obtenerHoy(Authentication authentication) {
-        return ResponseEntity.ok(entrenamientoService.obtenerEntrenamientoDeHoy(authentication.getName()));
+    @GetMapping("/dias/{diaId}")
+    public ResponseEntity<EntrenamientoDiaResponse> obtenerDia(Authentication authentication, @PathVariable Long diaId) {
+        return ResponseEntity.ok(entrenamientoService.obtenerEntrenamientoDelDia(authentication.getName(), diaId));
     }
 
     @PostMapping("/series")
