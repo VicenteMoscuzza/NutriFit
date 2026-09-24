@@ -1,145 +1,439 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import Navbar from '../components/Navbar'
-import { crearAlimento, listarAlimentos, type Alimento } from '../api/alimentos'
+import SelectorAlimento from '../components/SelectorAlimento'
+import { listarAlimentos, type Alimento } from '../api/alimentos'
 import { ApiError } from '../api/client'
 import {
-  agregarItemRegistro,
-  aplicarComidaGuardada,
+  agregarItemComida,
+  agregarItemComidaGuardada,
+  crearComida,
+  crearComidaDesdeGuardada,
+  crearComidaGuardada,
+  eliminarComida,
+  eliminarComidaGuardada,
+  eliminarItemComidaGuardada,
   eliminarItemRegistro,
   listarComidasGuardadas,
   obtenerRegistroDeHoy,
+  renombrarComida,
   type ComidaGuardada,
+  type ComidaRegistrada,
+  type ItemRegistro,
   type RegistroDiario,
 } from '../api/nutricion'
 
-const ALIMENTO_NUEVO = '__nuevo__'
+interface ComidaCardProps {
+  comida: ComidaRegistrada
+  alimentosDisponibles: Alimento[]
+  onAlimentoCreado: (alimento: Alimento) => void
+  onRenombrada: (comida: ComidaRegistrada) => void
+  onEliminada: (comidaId: number) => void
+  onItemAgregado: (comidaId: number, item: ItemRegistro) => void
+  onItemEliminado: (comidaId: number, itemId: number) => void
+}
+
+function ComidaCard({
+  comida,
+  alimentosDisponibles,
+  onAlimentoCreado,
+  onRenombrada,
+  onEliminada,
+  onItemAgregado,
+  onItemEliminado,
+}: ComidaCardProps) {
+  const [editando, setEditando] = useState(false)
+  const [nombreEditado, setNombreEditado] = useState(comida.nombre)
+  const [formularioAbierto, setFormularioAbierto] = useState(false)
+  const [guardandoNombre, setGuardandoNombre] = useState(false)
+
+  async function handleGuardarNombre() {
+    if (!nombreEditado.trim() || nombreEditado.trim() === comida.nombre) {
+      setEditando(false)
+      setNombreEditado(comida.nombre)
+      return
+    }
+    setGuardandoNombre(true)
+    try {
+      const actualizada = await renombrarComida(comida.id, nombreEditado.trim())
+      onRenombrada(actualizada)
+      setEditando(false)
+    } finally {
+      setGuardandoNombre(false)
+    }
+  }
+
+  async function handleEliminar() {
+    if (!window.confirm(`¿Eliminar "${comida.nombre}" y todos sus alimentos?`)) {
+      return
+    }
+    await eliminarComida(comida.id)
+    onEliminada(comida.id)
+  }
+
+  async function handleQuitarItem(itemId: number) {
+    await eliminarItemRegistro(itemId)
+    onItemEliminado(comida.id, itemId)
+  }
+
+  return (
+    <div className="dia">
+      <div className="dia-header">
+        {editando ? (
+          <div className="comida-nombre-editar">
+            <input value={nombreEditado} onChange={(event) => setNombreEditado(event.target.value)} autoFocus />
+            <button type="button" onClick={handleGuardarNombre} disabled={guardandoNombre}>
+              Guardar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditando(false)
+                setNombreEditado(comida.nombre)
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          <h2>{comida.nombre}</h2>
+        )}
+        <div className="dia-acciones">
+          {!editando && (
+            <button type="button" onClick={() => setEditando(true)}>
+              Renombrar
+            </button>
+          )}
+          <button type="button" onClick={() => setFormularioAbierto((actual) => !actual)}>
+            {formularioAbierto ? 'Cancelar' : '+ Agregar alimento'}
+          </button>
+          <button type="button" className="btn-quitar-dia" onClick={handleEliminar}>
+            Eliminar
+          </button>
+        </div>
+      </div>
+
+      <p className="entrenamiento-objetivo">
+        {comida.subtotalCalorias.toFixed(0)} kcal · {comida.subtotalProteina.toFixed(1)}p ·{' '}
+        {comida.subtotalCarbohidratos.toFixed(1)}c · {comida.subtotalGrasa.toFixed(1)}g
+      </p>
+
+      {comida.items.length === 0 ? (
+        <p className="dia-vacio">Sin alimentos</p>
+      ) : (
+        <ul className="lista-ejercicios">
+          {comida.items.map((item) => (
+            <li key={item.id}>
+              <span className="nombre">{item.nombreAlimento}</span>
+              <span className="grupo">
+                {item.cantidadGramos} g · {item.caloriasCalculadas.toFixed(0)} kcal
+              </span>
+              <button type="button" onClick={() => handleQuitarItem(item.id)}>
+                Quitar
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {formularioAbierto && (
+        <SelectorAlimento
+          idPrefix={`comida-${comida.id}`}
+          alimentosDisponibles={alimentosDisponibles}
+          onAlimentoCreado={onAlimentoCreado}
+          onAgregar={async (alimentoId, cantidadGramos) => {
+            const creado = await agregarItemComida(comida.id, alimentoId, cantidadGramos)
+            onItemAgregado(comida.id, creado)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+interface GestionComidasGuardadasProps {
+  comidasGuardadas: ComidaGuardada[]
+  alimentosDisponibles: Alimento[]
+  onAlimentoCreado: (alimento: Alimento) => void
+  onComidasGuardadasChange: (comidas: ComidaGuardada[]) => void
+}
+
+function GestionComidasGuardadas({
+  comidasGuardadas,
+  alimentosDisponibles,
+  onAlimentoCreado,
+  onComidasGuardadasChange,
+}: GestionComidasGuardadasProps) {
+  const [nombreNueva, setNombreNueva] = useState('')
+  const [creando, setCreando] = useState(false)
+  const [error, setError] = useState('')
+  const [comidaFormularioAbierta, setComidaFormularioAbierta] = useState<number | null>(null)
+
+  async function handleCrear(event: FormEvent) {
+    event.preventDefault()
+    if (!nombreNueva.trim()) {
+      setError('Ingresá un nombre para la comida')
+      return
+    }
+    setError('')
+    setCreando(true)
+    try {
+      const creada = await crearComidaGuardada(nombreNueva.trim())
+      onComidasGuardadasChange([...comidasGuardadas, creada])
+      setNombreNueva('')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo crear la comida guardada')
+    } finally {
+      setCreando(false)
+    }
+  }
+
+  async function handleEliminar(id: number) {
+    if (!window.confirm('¿Eliminar esta comida guardada?')) {
+      return
+    }
+    await eliminarComidaGuardada(id)
+    onComidasGuardadasChange(comidasGuardadas.filter((c) => c.id !== id))
+  }
+
+  async function handleQuitarItem(comidaId: number, itemId: number) {
+    await eliminarItemComidaGuardada(itemId)
+    onComidasGuardadasChange(
+      comidasGuardadas.map((c) => (c.id === comidaId ? { ...c, items: c.items.filter((i) => i.id !== itemId) } : c)),
+    )
+  }
+
+  return (
+    <div className="nutricion-guardadas">
+      {comidasGuardadas.length === 0 && <p className="dia-vacio">Todavía no creaste comidas guardadas.</p>}
+
+      <div className="semana">
+        {comidasGuardadas.map((comida) => (
+          <div className="dia" key={comida.id}>
+            <div className="dia-header">
+              <h2>{comida.nombre}</h2>
+              <div className="dia-acciones">
+                <button
+                  type="button"
+                  onClick={() => setComidaFormularioAbierta((actual) => (actual === comida.id ? null : comida.id))}
+                >
+                  {comidaFormularioAbierta === comida.id ? 'Cancelar' : '+ Agregar alimento'}
+                </button>
+                <button type="button" className="btn-quitar-dia" onClick={() => handleEliminar(comida.id)}>
+                  Eliminar
+                </button>
+              </div>
+            </div>
+
+            {comida.items.length === 0 ? (
+              <p className="dia-vacio">Sin alimentos</p>
+            ) : (
+              <ul className="lista-ejercicios">
+                {comida.items.map((item) => (
+                  <li key={item.id}>
+                    <span className="nombre">{item.nombreAlimento}</span>
+                    <span className="grupo">{item.cantidadGramos} g</span>
+                    <button type="button" onClick={() => handleQuitarItem(comida.id, item.id)}>
+                      Quitar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {comidaFormularioAbierta === comida.id && (
+              <SelectorAlimento
+                idPrefix={`guardada-${comida.id}`}
+                alimentosDisponibles={alimentosDisponibles}
+                onAlimentoCreado={onAlimentoCreado}
+                onAgregar={async (alimentoId, cantidadGramos) => {
+                  const creado = await agregarItemComidaGuardada(comida.id, alimentoId, cantidadGramos)
+                  onComidasGuardadasChange(
+                    comidasGuardadas.map((c) => (c.id === comida.id ? { ...c, items: [...c.items, creado] } : c)),
+                  )
+                }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      <form className="auth-form" onSubmit={handleCrear} noValidate>
+        <label htmlFor="nombre-comida-guardada">Nueva comida guardada</label>
+        <input
+          id="nombre-comida-guardada"
+          placeholder="Ej: Desayuno clásico"
+          value={nombreNueva}
+          onChange={(event) => setNombreNueva(event.target.value)}
+        />
+        {error && <p className="field-error">{error}</p>}
+        <button type="submit" disabled={creando}>
+          {creando ? 'Creando...' : '+ Crear comida guardada'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
+function registroVacio(): RegistroDiario {
+  return {
+    id: null,
+    fecha: new Date().toISOString().slice(0, 10),
+    comidas: [],
+    totalCalorias: 0,
+    totalProteina: 0,
+    totalCarbohidratos: 0,
+    totalGrasa: 0,
+  }
+}
 
 export default function NutricionPage() {
   const [registro, setRegistro] = useState<RegistroDiario | null>(null)
   const [comidasGuardadas, setComidasGuardadas] = useState<ComidaGuardada[]>([])
   const [alimentosDisponibles, setAlimentosDisponibles] = useState<Alimento[]>([])
   const [cargando, setCargando] = useState(true)
-  const [alimentoSeleccionado, setAlimentoSeleccionado] = useState('')
-  const [nombreNuevoAlimento, setNombreNuevoAlimento] = useState('')
-  const [caloriasNuevoAlimento, setCaloriasNuevoAlimento] = useState('')
-  const [proteinaNuevoAlimento, setProteinaNuevoAlimento] = useState('')
-  const [carbohidratosNuevoAlimento, setCarbohidratosNuevoAlimento] = useState('')
-  const [grasaNuevoAlimento, setGrasaNuevoAlimento] = useState('')
-  const [cantidadGramos, setCantidadGramos] = useState('100')
+  const [mostrarGuardadas, setMostrarGuardadas] = useState(false)
   const [error, setError] = useState('')
-  const [guardando, setGuardando] = useState(false)
-  const [aplicandoId, setAplicandoId] = useState<number | null>(null)
+  const [formularioComidaAbierto, setFormularioComidaAbierto] = useState(false)
+  const [modoCreacionComida, setModoCreacionComida] = useState<'blanco' | 'guardada'>('blanco')
+  const [nombreComidaNueva, setNombreComidaNueva] = useState('')
+  const [comidaGuardadaSeleccionada, setComidaGuardadaSeleccionada] = useState('')
+  const [creandoComida, setCreandoComida] = useState(false)
 
   useEffect(() => {
     Promise.all([obtenerRegistroDeHoy(), listarComidasGuardadas(), listarAlimentos()])
-      .then(([registroData, comidasData, alimentosData]) => {
+      .then(([registroData, comidasGuardadasData, alimentosData]) => {
         setRegistro(registroData)
-        setComidasGuardadas(comidasData)
+        setComidasGuardadas(comidasGuardadasData)
         setAlimentosDisponibles(alimentosData)
-        setAlimentoSeleccionado(alimentosData.length > 0 ? String(alimentosData[0].id) : ALIMENTO_NUEVO)
+        if (comidasGuardadasData.length > 0) {
+          setComidaGuardadaSeleccionada(String(comidasGuardadasData[0].id))
+        }
       })
       .finally(() => setCargando(false))
   }, [])
 
-  async function handleAplicarComida(comidaId: number) {
-    setAplicandoId(comidaId)
-    try {
-      const actualizado = await aplicarComidaGuardada(comidaId)
-      setRegistro(actualizado)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo aplicar la comida guardada')
-    } finally {
-      setAplicandoId(null)
+  function handleAlimentoCreado(alimento: Alimento) {
+    setAlimentosDisponibles((actuales) => [...actuales, alimento])
+  }
+
+  function agregarComidaARegistro(actual: RegistroDiario | null, nueva: ComidaRegistrada): RegistroDiario {
+    const base = actual ?? registroVacio()
+    return {
+      ...base,
+      comidas: [...base.comidas, nueva],
+      totalCalorias: base.totalCalorias + nueva.subtotalCalorias,
+      totalProteina: base.totalProteina + nueva.subtotalProteina,
+      totalCarbohidratos: base.totalCarbohidratos + nueva.subtotalCarbohidratos,
+      totalGrasa: base.totalGrasa + nueva.subtotalGrasa,
     }
   }
 
-  async function handleAgregarItem(event: FormEvent) {
+  async function handleCrearComida(event: FormEvent) {
     event.preventDefault()
 
-    let alimentoId: number
-    const cantidad = Number(cantidadGramos)
-
-    if (alimentoSeleccionado === ALIMENTO_NUEVO) {
-      if (!nombreNuevoAlimento.trim()) {
-        setError('Ingresá un nombre para el alimento')
-        return
-      }
-    } else if (!alimentoSeleccionado) {
-      setError('Elegí un alimento')
-      return
-    }
-
-    if (cantidadGramos.trim() === '' || Number.isNaN(cantidad) || cantidad <= 0) {
-      setError('Ingresá una cantidad en gramos válida')
+    if (modoCreacionComida === 'guardada' && !comidaGuardadaSeleccionada) {
+      setError('Elegí una comida guardada')
       return
     }
 
     setError('')
-    setGuardando(true)
+    setCreandoComida(true)
     try {
-      if (alimentoSeleccionado === ALIMENTO_NUEVO) {
-        const calorias = Number(caloriasNuevoAlimento)
-        const proteina = Number(proteinaNuevoAlimento)
-        const carbohidratos = Number(carbohidratosNuevoAlimento)
-        const grasa = Number(grasaNuevoAlimento)
-        if ([calorias, proteina, carbohidratos, grasa].some((v) => Number.isNaN(v) || v < 0)) {
-          setError('Completá los valores nutricionales del alimento')
-          setGuardando(false)
-          return
-        }
-        const nuevo = await crearAlimento(nombreNuevoAlimento.trim(), calorias, proteina, carbohidratos, grasa)
-        setAlimentosDisponibles((actuales) => [...actuales, nuevo])
-        alimentoId = nuevo.id
-        setAlimentoSeleccionado(String(nuevo.id))
-        setNombreNuevoAlimento('')
-        setCaloriasNuevoAlimento('')
-        setProteinaNuevoAlimento('')
-        setCarbohidratosNuevoAlimento('')
-        setGrasaNuevoAlimento('')
-      } else {
-        alimentoId = Number(alimentoSeleccionado)
-      }
+      const creada =
+        modoCreacionComida === 'blanco'
+          ? await crearComida(nombreComidaNueva.trim() || undefined)
+          : await crearComidaDesdeGuardada(Number(comidaGuardadaSeleccionada))
 
-      const creado = await agregarItemRegistro(alimentoId, cantidad)
-      setRegistro((actual) => {
-        const base = actual ?? {
-          id: null,
-          fecha: new Date().toISOString().slice(0, 10),
-          items: [],
-          totalCalorias: 0,
-          totalProteina: 0,
-          totalCarbohidratos: 0,
-          totalGrasa: 0,
-        }
-        return {
-          ...base,
-          items: [...base.items, creado],
-          totalCalorias: base.totalCalorias + creado.caloriasCalculadas,
-          totalProteina: base.totalProteina + creado.proteinaCalculada,
-          totalCarbohidratos: base.totalCarbohidratos + creado.carbohidratosCalculados,
-          totalGrasa: base.totalGrasa + creado.grasaCalculada,
-        }
-      })
+      setRegistro((actual) => agregarComidaARegistro(actual, creada))
+      setNombreComidaNueva('')
+      setFormularioComidaAbierto(false)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo agregar el alimento')
+      setError(err instanceof ApiError ? err.message : 'No se pudo agregar la comida')
     } finally {
-      setGuardando(false)
+      setCreandoComida(false)
     }
   }
 
-  async function handleEliminarItem(itemId: number) {
-    await eliminarItemRegistro(itemId)
+  function handleComidaRenombrada(actualizada: ComidaRegistrada) {
     setRegistro((actual) => {
       if (!actual) {
         return actual
       }
-      const item = actual.items.find((i) => i.id === itemId)
-      if (!item) {
+      return { ...actual, comidas: actual.comidas.map((c) => (c.id === actualizada.id ? actualizada : c)) }
+    })
+  }
+
+  function handleComidaEliminada(comidaId: number) {
+    setRegistro((actual) => {
+      if (!actual) {
+        return actual
+      }
+      const comida = actual.comidas.find((c) => c.id === comidaId)
+      if (!comida) {
         return actual
       }
       return {
         ...actual,
-        items: actual.items.filter((i) => i.id !== itemId),
+        comidas: actual.comidas.filter((c) => c.id !== comidaId),
+        totalCalorias: actual.totalCalorias - comida.subtotalCalorias,
+        totalProteina: actual.totalProteina - comida.subtotalProteina,
+        totalCarbohidratos: actual.totalCarbohidratos - comida.subtotalCarbohidratos,
+        totalGrasa: actual.totalGrasa - comida.subtotalGrasa,
+      }
+    })
+  }
+
+  function handleItemAgregado(comidaId: number, item: ItemRegistro) {
+    setRegistro((actual) => {
+      if (!actual) {
+        return actual
+      }
+      return {
+        ...actual,
+        comidas: actual.comidas.map((c) =>
+          c.id === comidaId
+            ? {
+                ...c,
+                items: [...c.items, item],
+                subtotalCalorias: c.subtotalCalorias + item.caloriasCalculadas,
+                subtotalProteina: c.subtotalProteina + item.proteinaCalculada,
+                subtotalCarbohidratos: c.subtotalCarbohidratos + item.carbohidratosCalculados,
+                subtotalGrasa: c.subtotalGrasa + item.grasaCalculada,
+              }
+            : c,
+        ),
+        totalCalorias: actual.totalCalorias + item.caloriasCalculadas,
+        totalProteina: actual.totalProteina + item.proteinaCalculada,
+        totalCarbohidratos: actual.totalCarbohidratos + item.carbohidratosCalculados,
+        totalGrasa: actual.totalGrasa + item.grasaCalculada,
+      }
+    })
+  }
+
+  function handleItemEliminado(comidaId: number, itemId: number) {
+    setRegistro((actual) => {
+      if (!actual) {
+        return actual
+      }
+      const comida = actual.comidas.find((c) => c.id === comidaId)
+      const item = comida?.items.find((i) => i.id === itemId)
+      if (!comida || !item) {
+        return actual
+      }
+      return {
+        ...actual,
+        comidas: actual.comidas.map((c) =>
+          c.id === comidaId
+            ? {
+                ...c,
+                items: c.items.filter((i) => i.id !== itemId),
+                subtotalCalorias: c.subtotalCalorias - item.caloriasCalculadas,
+                subtotalProteina: c.subtotalProteina - item.proteinaCalculada,
+                subtotalCarbohidratos: c.subtotalCarbohidratos - item.carbohidratosCalculados,
+                subtotalGrasa: c.subtotalGrasa - item.grasaCalculada,
+              }
+            : c,
+        ),
         totalCalorias: actual.totalCalorias - item.caloriasCalculadas,
         totalProteina: actual.totalProteina - item.proteinaCalculada,
         totalCarbohidratos: actual.totalCarbohidratos - item.carbohidratosCalculados,
@@ -154,14 +448,14 @@ export default function NutricionPage() {
         <Navbar />
         <main className="page-content">
           <section className="page">
-            <p>Cargando registro de hoy...</p>
+            <p>Cargando nutrición...</p>
           </section>
         </main>
       </>
     )
   }
 
-  const items = registro?.items ?? []
+  const comidas = registro?.comidas ?? []
 
   return (
     <>
@@ -172,143 +466,135 @@ export default function NutricionPage() {
             <h1>Nutrición de hoy</h1>
           </div>
 
-          {comidasGuardadas.length > 0 && (
-            <div className="dia-selector">
-              {comidasGuardadas.map((comida) => (
-                <button
-                  key={comida.id}
-                  type="button"
-                  className="dia-tab"
-                  disabled={aplicandoId === comida.id}
-                  onClick={() => handleAplicarComida(comida.id)}
-                >
-                  {aplicandoId === comida.id ? 'Aplicando...' : `+ Aplicar "${comida.nombre}"`}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div className="nutricion-totales">
             <div className="nutricion-total">
-              <span className="nutricion-total-valor">{registro?.totalCalorias.toFixed(0) ?? 0}</span>
+              <span className="nutricion-total-valor">{(registro?.totalCalorias ?? 0).toFixed(0)}</span>
               <span className="nutricion-total-etiqueta">kcal</span>
             </div>
             <div className="nutricion-total">
-              <span className="nutricion-total-valor">{registro?.totalProteina.toFixed(1) ?? 0}</span>
+              <span className="nutricion-total-valor">{(registro?.totalProteina ?? 0).toFixed(1)}</span>
               <span className="nutricion-total-etiqueta">proteína (g)</span>
             </div>
             <div className="nutricion-total">
-              <span className="nutricion-total-valor">{registro?.totalCarbohidratos.toFixed(1) ?? 0}</span>
+              <span className="nutricion-total-valor">{(registro?.totalCarbohidratos ?? 0).toFixed(1)}</span>
               <span className="nutricion-total-etiqueta">carbos (g)</span>
             </div>
             <div className="nutricion-total">
-              <span className="nutricion-total-valor">{registro?.totalGrasa.toFixed(1) ?? 0}</span>
+              <span className="nutricion-total-valor">{(registro?.totalGrasa ?? 0).toFixed(1)}</span>
               <span className="nutricion-total-etiqueta">grasa (g)</span>
             </div>
           </div>
 
-          {items.length === 0 ? (
-            <p className="dia-vacio">Todavía no registraste alimentos hoy.</p>
-          ) : (
-            <ul className="lista-ejercicios">
-              {items.map((item) => (
-                <li key={item.id}>
-                  <span className="nombre">
-                    {item.nombreAlimento} <span className="grupo">({item.cantidadGramos} g)</span>
-                  </span>
-                  <span className="grupo">
-                    {item.caloriasCalculadas.toFixed(0)} kcal · {item.proteinaCalculada.toFixed(1)}p ·{' '}
-                    {item.carbohidratosCalculados.toFixed(1)}c · {item.grasaCalculada.toFixed(1)}g
-                  </span>
-                  <button type="button" onClick={() => handleEliminarItem(item.id)}>
-                    Quitar
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {comidas.length === 0 && (
+            <p className="dia-vacio">Todavía no registraste comidas hoy. Agregá una comida para empezar.</p>
           )}
 
-          <form className="auth-form" onSubmit={handleAgregarItem} noValidate>
-            <label htmlFor="alimento">Alimento</label>
-            <select
-              id="alimento"
-              value={alimentoSeleccionado}
-              onChange={(event) => setAlimentoSeleccionado(event.target.value)}
-            >
-              {alimentosDisponibles.map((alimento) => (
-                <option key={alimento.id} value={alimento.id}>
-                  {alimento.nombre} ({alimento.caloriasPor100g} kcal/100g)
-                </option>
-              ))}
-              <option value={ALIMENTO_NUEVO}>+ Crear alimento nuevo...</option>
-            </select>
+          <div className="semana">
+            {comidas.map((comida) => (
+              <ComidaCard
+                key={comida.id}
+                comida={comida}
+                alimentosDisponibles={alimentosDisponibles}
+                onAlimentoCreado={handleAlimentoCreado}
+                onRenombrada={handleComidaRenombrada}
+                onEliminada={handleComidaEliminada}
+                onItemAgregado={handleItemAgregado}
+                onItemEliminado={handleItemEliminado}
+              />
+            ))}
+          </div>
 
-            {alimentoSeleccionado === ALIMENTO_NUEVO && (
-              <>
-                <label htmlFor="nombre-nuevo">Nombre del alimento</label>
-                <input
-                  id="nombre-nuevo"
-                  value={nombreNuevoAlimento}
-                  onChange={(event) => setNombreNuevoAlimento(event.target.value)}
-                />
+          <button
+            type="button"
+            className="btn-agregar-dia"
+            onClick={() => {
+              setError('')
+              setFormularioComidaAbierto((actual) => !actual)
+            }}
+          >
+            {formularioComidaAbierto ? 'Cancelar' : '+ Agregar comida'}
+          </button>
 
-                <label htmlFor="calorias">Calorías por 100g</label>
-                <input
-                  id="calorias"
-                  type="number"
-                  min={0}
-                  step="0.1"
-                  value={caloriasNuevoAlimento}
-                  onChange={(event) => setCaloriasNuevoAlimento(event.target.value)}
-                />
+          {formularioComidaAbierto && (
+            <form className="auth-form" onSubmit={handleCrearComida} noValidate>
+              <label htmlFor="modo-creacion-comida">Cómo querés crearla</label>
+              <div className="opciones-radio" id="modo-creacion-comida">
+                <label>
+                  <input
+                    type="radio"
+                    name="modo-creacion-comida"
+                    checked={modoCreacionComida === 'blanco'}
+                    onChange={() => setModoCreacionComida('blanco')}
+                  />
+                  Comida en blanco
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="modo-creacion-comida"
+                    checked={modoCreacionComida === 'guardada'}
+                    onChange={() => setModoCreacionComida('guardada')}
+                    disabled={comidasGuardadas.length === 0}
+                  />
+                  Desde una comida guardada
+                </label>
+              </div>
 
-                <label htmlFor="proteina">Proteína por 100g</label>
-                <input
-                  id="proteina"
-                  type="number"
-                  min={0}
-                  step="0.1"
-                  value={proteinaNuevoAlimento}
-                  onChange={(event) => setProteinaNuevoAlimento(event.target.value)}
-                />
+              {modoCreacionComida === 'blanco' && (
+                <>
+                  <label htmlFor="nombre-comida-nueva">Nombre (opcional)</label>
+                  <input
+                    id="nombre-comida-nueva"
+                    placeholder="Comida 1"
+                    value={nombreComidaNueva}
+                    onChange={(event) => setNombreComidaNueva(event.target.value)}
+                  />
+                </>
+              )}
 
-                <label htmlFor="carbohidratos">Carbohidratos por 100g</label>
-                <input
-                  id="carbohidratos"
-                  type="number"
-                  min={0}
-                  step="0.1"
-                  value={carbohidratosNuevoAlimento}
-                  onChange={(event) => setCarbohidratosNuevoAlimento(event.target.value)}
-                />
+              {modoCreacionComida === 'guardada' && (
+                comidasGuardadas.length === 0 ? (
+                  <p className="dia-vacio">Todavía no tenés comidas guardadas.</p>
+                ) : (
+                  <>
+                    <label htmlFor="comida-guardada-seleccionada">Comida guardada</label>
+                    <select
+                      id="comida-guardada-seleccionada"
+                      value={comidaGuardadaSeleccionada}
+                      onChange={(event) => setComidaGuardadaSeleccionada(event.target.value)}
+                    >
+                      {comidasGuardadas.map((comida) => (
+                        <option key={comida.id} value={comida.id}>
+                          {comida.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )
+              )}
 
-                <label htmlFor="grasa">Grasa por 100g</label>
-                <input
-                  id="grasa"
-                  type="number"
-                  min={0}
-                  step="0.1"
-                  value={grasaNuevoAlimento}
-                  onChange={(event) => setGrasaNuevoAlimento(event.target.value)}
-                />
-              </>
-            )}
+              {error && <p className="field-error">{error}</p>}
 
-            <label htmlFor="cantidad">Cantidad (g)</label>
-            <input
-              id="cantidad"
-              type="number"
-              min={1}
-              value={cantidadGramos}
-              onChange={(event) => setCantidadGramos(event.target.value)}
-            />
+              <button type="submit" disabled={creandoComida}>
+                {creandoComida ? 'Agregando...' : 'Agregar comida'}
+              </button>
+            </form>
+          )}
 
-            {error && <p className="field-error">{error}</p>}
-
-            <button type="submit" disabled={guardando}>
-              {guardando ? 'Agregando...' : 'Agregar alimento'}
+          <div className="nutricion-guardadas-toggle">
+            <button type="button" className="btn-ghost" onClick={() => setMostrarGuardadas((actual) => !actual)}>
+              {mostrarGuardadas ? 'Ocultar comidas guardadas' : 'Gestionar comidas guardadas'}
             </button>
-          </form>
+          </div>
+
+          {mostrarGuardadas && (
+            <GestionComidasGuardadas
+              comidasGuardadas={comidasGuardadas}
+              alimentosDisponibles={alimentosDisponibles}
+              onAlimentoCreado={handleAlimentoCreado}
+              onComidasGuardadasChange={setComidasGuardadas}
+            />
+          )}
         </section>
       </main>
     </>

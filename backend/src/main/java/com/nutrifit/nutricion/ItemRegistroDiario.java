@@ -29,9 +29,9 @@ public class ItemRegistroDiario {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "meal_log_id", nullable = false)
+    @JoinColumn(name = "meal_entry_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private RegistroDiario registroDiario;
+    private ComidaRegistrada comidaRegistrada;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "food_id", nullable = false)

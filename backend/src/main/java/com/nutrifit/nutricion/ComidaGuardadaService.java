@@ -6,10 +6,8 @@ import com.nutrifit.nutricion.dto.AgregarItemComidaGuardadaRequest;
 import com.nutrifit.nutricion.dto.ComidaGuardadaResponse;
 import com.nutrifit.nutricion.dto.CrearComidaGuardadaRequest;
 import com.nutrifit.nutricion.dto.ItemComidaGuardadaResponse;
-import com.nutrifit.nutricion.dto.RegistroDiarioResponse;
 import com.nutrifit.usuarios.Usuario;
 import com.nutrifit.usuarios.UsuarioService;
-import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +20,6 @@ public class ComidaGuardadaService {
     private final ComidaGuardadaRepository comidaGuardadaRepository;
     private final ItemComidaGuardadaRepository itemComidaGuardadaRepository;
     private final AlimentoService alimentoService;
-    private final RegistroDiarioService registroDiarioService;
     private final UsuarioService usuarioService;
 
     public List<ComidaGuardadaResponse> listar(String email) {
@@ -76,22 +73,6 @@ public class ComidaGuardadaService {
                 .orElseThrow(ItemComidaGuardadaNoEncontradoException::new);
 
         itemComidaGuardadaRepository.delete(item);
-    }
-
-    @Transactional
-    public RegistroDiarioResponse aplicar(String email, Long comidaId, LocalDate fecha) {
-        Usuario usuario = usuarioService.obtenerEntidadAutenticada(email);
-        ComidaGuardada comida = comidaGuardadaRepository.findByIdAndUsuarioId(comidaId, usuario.getId())
-                .orElseThrow(ComidaGuardadaNoEncontradaException::new);
-
-        LocalDate fechaAplicar = fecha != null ? fecha : LocalDate.now();
-        RegistroDiario registro = registroDiarioService.obtenerOCrearRegistro(usuario, fechaAplicar);
-
-        for (ItemComidaGuardada item : itemComidaGuardadaRepository.buscarPorComida(comida.getId())) {
-            registroDiarioService.crearItem(registro, item.getAlimento(), item.getCantidadGramos());
-        }
-
-        return RegistroDiarioResponse.desde(registro, registroDiarioService.obtenerItems(registro.getId()));
     }
 
     private List<ItemComidaGuardadaResponse> obtenerItems(Long comidaId) {

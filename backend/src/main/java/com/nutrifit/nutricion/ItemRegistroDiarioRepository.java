@@ -10,9 +10,9 @@ public interface ItemRegistroDiarioRepository extends JpaRepository<ItemRegistro
 
     @Query("select i from ItemRegistroDiario i "
             + "join fetch i.alimento "
-            + "where i.registroDiario.id = :registroId "
+            + "where i.comidaRegistrada.id = :comidaId "
             + "order by i.id asc")
-    List<ItemRegistroDiario> buscarPorRegistro(@Param("registroId") Long registroId);
+    List<ItemRegistroDiario> buscarPorComida(@Param("comidaId") Long comidaId);
 
-    Optional<ItemRegistroDiario> findByIdAndRegistroDiarioUsuarioId(Long id, Long usuarioId);
+    Optional<ItemRegistroDiario> findByIdAndComidaRegistradaRegistroDiarioUsuarioId(Long id, Long usuarioId);
 }

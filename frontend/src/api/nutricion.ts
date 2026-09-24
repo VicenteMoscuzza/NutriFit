@@ -11,10 +11,20 @@ export interface ItemRegistro {
   grasaCalculada: number
 }
 
+export interface ComidaRegistrada {
+  id: number
+  nombre: string
+  items: ItemRegistro[]
+  subtotalCalorias: number
+  subtotalProteina: number
+  subtotalCarbohidratos: number
+  subtotalGrasa: number
+}
+
 export interface RegistroDiario {
   id: number | null
   fecha: string
-  items: ItemRegistro[]
+  comidas: ComidaRegistrada[]
   totalCalorias: number
   totalProteina: number
   totalCarbohidratos: number
@@ -38,8 +48,33 @@ export function obtenerRegistroDeHoy() {
   return apiFetch<RegistroDiario>('/api/nutricion/registro')
 }
 
-export function agregarItemRegistro(alimentoId: number, cantidadGramos: number) {
-  return apiFetch<ItemRegistro>('/api/nutricion/registro/items', {
+export function crearComida(nombre?: string) {
+  return apiFetch<ComidaRegistrada>('/api/nutricion/registro/comidas', {
+    method: 'POST',
+    body: JSON.stringify({ nombre }),
+  })
+}
+
+export function crearComidaDesdeGuardada(comidaGuardadaId: number) {
+  return apiFetch<ComidaRegistrada>('/api/nutricion/registro/comidas/desde-guardada', {
+    method: 'POST',
+    body: JSON.stringify({ comidaGuardadaId }),
+  })
+}
+
+export function renombrarComida(id: number, nombre: string) {
+  return apiFetch<ComidaRegistrada>(`/api/nutricion/registro/comidas/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ nombre }),
+  })
+}
+
+export function eliminarComida(id: number) {
+  return apiFetch<void>(`/api/nutricion/registro/comidas/${id}`, { method: 'DELETE' })
+}
+
+export function agregarItemComida(comidaId: number, alimentoId: number, cantidadGramos: number) {
+  return apiFetch<ItemRegistro>(`/api/nutricion/registro/comidas/${comidaId}/items`, {
     method: 'POST',
     body: JSON.stringify({ alimentoId, cantidadGramos }),
   })
@@ -73,8 +108,4 @@ export function agregarItemComidaGuardada(comidaId: number, alimentoId: number, 
 
 export function eliminarItemComidaGuardada(id: number) {
   return apiFetch<void>(`/api/nutricion/comidas-guardadas/items/${id}`, { method: 'DELETE' })
-}
-
-export function aplicarComidaGuardada(comidaId: number) {
-  return apiFetch<RegistroDiario>(`/api/nutricion/comidas-guardadas/${comidaId}/aplicar`, { method: 'POST' })
 }

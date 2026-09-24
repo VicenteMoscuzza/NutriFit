@@ -4,12 +4,9 @@ import com.nutrifit.nutricion.dto.AgregarItemComidaGuardadaRequest;
 import com.nutrifit.nutricion.dto.ComidaGuardadaResponse;
 import com.nutrifit.nutricion.dto.CrearComidaGuardadaRequest;
 import com.nutrifit.nutricion.dto.ItemComidaGuardadaResponse;
-import com.nutrifit.nutricion.dto.RegistroDiarioResponse;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,7 +16,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -60,13 +56,5 @@ public class ComidaGuardadaController {
     public ResponseEntity<Void> eliminarItem(Authentication authentication, @PathVariable Long id) {
         comidaGuardadaService.eliminarItem(authentication.getName(), id);
         return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/{id}/aplicar")
-    public ResponseEntity<RegistroDiarioResponse> aplicar(
-            Authentication authentication,
-            @PathVariable Long id,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        return ResponseEntity.ok(comidaGuardadaService.aplicar(authentication.getName(), id, fecha));
     }
 }

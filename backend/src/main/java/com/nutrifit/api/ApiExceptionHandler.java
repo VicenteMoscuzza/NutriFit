@@ -3,6 +3,7 @@ package com.nutrifit.api;
 import com.nutrifit.alimentos.AlimentoNoDisponibleException;
 import com.nutrifit.entrenamiento.SerieEntrenamientoNoEncontradaException;
 import com.nutrifit.nutricion.ComidaGuardadaNoEncontradaException;
+import com.nutrifit.nutricion.ComidaRegistradaNoEncontradaException;
 import com.nutrifit.nutricion.ItemComidaGuardadaNoEncontradoException;
 import com.nutrifit.nutricion.ItemRegistroDiarioNoEncontradoException;
 import com.nutrifit.rutinas.DiaRutinaNoEncontradoException;
@@ -82,6 +83,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(ItemComidaGuardadaNoEncontradoException.class)
     public ResponseEntity<Map<String, Object>> manejarItemComidaGuardadaNoEncontrado(ItemComidaGuardadaNoEncontradoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ComidaRegistradaNoEncontradaException.class)
+    public ResponseEntity<Map<String, Object>> manejarComidaRegistradaNoEncontrada(ComidaRegistradaNoEncontradaException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
     }
 }

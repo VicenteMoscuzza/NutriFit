@@ -1,7 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import './App.css'
 import RutaPrivada from './auth/RutaPrivada'
-import ComidasGuardadasPage from './pages/ComidasGuardadasPage'
 import EntrenamientoHoyPage from './pages/EntrenamientoHoyPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -41,14 +40,6 @@ function App() {
         element={
           <RutaPrivada>
             <NutricionPage />
-          </RutaPrivada>
-        }
-      />
-      <Route
-        path="/comidas-guardadas"
-        element={
-          <RutaPrivada>
-            <ComidasGuardadasPage />
           </RutaPrivada>
         }
       />

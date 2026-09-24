@@ -6,7 +6,6 @@ const NAV_LINKS = [
   { to: '/entrenamiento', label: 'Hoy' },
   { to: '/rutina', label: 'Rutina' },
   { to: '/nutricion', label: 'Nutrición' },
-  { to: '/comidas-guardadas', label: 'Comidas guardadas' },
 ]
 
 export default function Navbar() {

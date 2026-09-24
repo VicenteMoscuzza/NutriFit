@@ -28,12 +28,7 @@ export default function HomePage() {
           <Link to="/nutricion" className="dashboard-card">
             <span className="dashboard-icon">🍽️</span>
             <h2>Nutrición de hoy</h2>
-            <p>Registrá los alimentos que comiste y seguí tus macros.</p>
-          </Link>
-          <Link to="/comidas-guardadas" className="dashboard-card">
-            <span className="dashboard-icon">📋</span>
-            <h2>Comidas guardadas</h2>
-            <p>Agrupá alimentos frecuentes para aplicarlos rápido.</p>
+            <p>Registrá tus comidas del día y seguí tus macros.</p>
           </Link>
         </div>
       </main>
