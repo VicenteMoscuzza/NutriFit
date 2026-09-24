@@ -45,7 +45,7 @@ function App() {
         }
       />
       <Route
-        path="/nutricion/comidas-guardadas"
+        path="/nutricion/mis-comidas"
         element={
           <RutaPrivada>
             <ComidasGuardadasPage />

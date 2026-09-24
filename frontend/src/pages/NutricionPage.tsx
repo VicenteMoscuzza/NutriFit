@@ -72,7 +72,7 @@ function ComidaCard({
   async function handleCargarGuardada(event: FormEvent) {
     event.preventDefault()
     if (!comidaGuardadaSeleccionada) {
-      setError('Elegí una comida guardada')
+      setError('Elegí una de tus comidas')
       return
     }
     setError('')
@@ -82,7 +82,7 @@ function ComidaCard({
       onActualizada(actualizada)
       setPanelAbierto(null)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo cargar la comida guardada')
+      setError(err instanceof ApiError ? err.message : 'No se pudo cargar la comida')
     } finally {
       setCargandoGuardada(false)
     }
@@ -97,7 +97,7 @@ function ComidaCard({
             {panelAbierto === 'alimento' ? 'Cancelar' : '+ Alimento'}
           </button>
           <button type="button" onClick={() => alternarPanel('guardada')}>
-            {panelAbierto === 'guardada' ? 'Cancelar' : '+ Comida guardada'}
+            {panelAbierto === 'guardada' ? 'Cancelar' : '+ Mis comidas'}
           </button>
           <button type="button" className="btn-quitar-dia" onClick={handleEliminar}>
             Eliminar
@@ -111,7 +111,7 @@ function ComidaCard({
       </p>
 
       {comida.items.length === 0 ? (
-        <p className="dia-vacio">Sin alimentos. Agregá alimentos o cargá una comida guardada.</p>
+        <p className="dia-vacio">Sin alimentos. Agregá alimentos o cargá una de Mis comidas.</p>
       ) : (
         <ul className="lista-ejercicios">
           {comida.items.map((item) => (
@@ -142,10 +142,10 @@ function ComidaCard({
 
       {panelAbierto === 'guardada' &&
         (comidasGuardadas.length === 0 ? (
-          <p className="dia-vacio">Todavía no tenés comidas guardadas. Creá una en "Gestionar comidas guardadas".</p>
+          <p className="dia-vacio">Todavía no creaste ninguna comida en Mis comidas.</p>
         ) : (
           <form className="auth-form" onSubmit={handleCargarGuardada} noValidate>
-            <label htmlFor={`comida-${comida.id}-guardada`}>Comida guardada</label>
+            <label htmlFor={`comida-${comida.id}-guardada`}>Mis comidas</label>
             <select
               id={`comida-${comida.id}-guardada`}
               value={comidaGuardadaSeleccionada}
@@ -341,8 +341,8 @@ export default function NutricionPage() {
         <section className="page">
           <div className="page-header">
             <h1>Nutrición de hoy</h1>
-            <Link to="/nutricion/comidas-guardadas" className="btn-ghost">
-              Gestionar comidas guardadas
+            <Link to="/nutricion/mis-comidas" className="btn-ghost">
+              Mis comidas
             </Link>
           </div>
 

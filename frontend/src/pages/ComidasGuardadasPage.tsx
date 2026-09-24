@@ -49,14 +49,14 @@ export default function ComidasGuardadasPage() {
       setNombreNueva('')
       setComidaFormularioAbierta(creada.id)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo crear la comida guardada')
+      setError(err instanceof ApiError ? err.message : 'No se pudo crear la comida')
     } finally {
       setCreando(false)
     }
   }
 
   async function handleEliminar(id: number) {
-    if (!window.confirm('¿Eliminar esta comida guardada?')) {
+    if (!window.confirm('¿Eliminar esta comida de Mis comidas?')) {
       return
     }
     await eliminarComidaGuardada(id)
@@ -76,7 +76,7 @@ export default function ComidasGuardadasPage() {
         <Navbar />
         <main className="page-content">
           <section className="page">
-            <p>Cargando comidas guardadas...</p>
+            <p>Cargando mis comidas...</p>
           </section>
         </main>
       </>
@@ -89,7 +89,7 @@ export default function ComidasGuardadasPage() {
       <main className="page-content">
         <section className="page">
           <div className="page-header">
-            <h1>Comidas guardadas</h1>
+            <h1>Mis comidas</h1>
             <Link to="/nutricion" className="btn-ghost">
               ← Volver a nutrición
             </Link>
@@ -99,7 +99,7 @@ export default function ComidasGuardadasPage() {
             Armá combinaciones de alimentos que comés seguido para cargarlas de una vez al registrar una comida.
           </p>
 
-          {comidasGuardadas.length === 0 && <p className="dia-vacio">Todavía no creaste comidas guardadas.</p>}
+          {comidasGuardadas.length === 0 && <p className="dia-vacio">Todavía no creaste ninguna comida.</p>}
 
           <div className="semana">
             {comidasGuardadas.map((comida) => (
@@ -153,7 +153,7 @@ export default function ComidasGuardadasPage() {
           </div>
 
           <form className="auth-form" onSubmit={handleCrear} noValidate>
-            <label htmlFor="nombre-comida-guardada">Nueva comida guardada</label>
+            <label htmlFor="nombre-comida-guardada">Nueva comida</label>
             <input
               id="nombre-comida-guardada"
               placeholder="Ej: Desayuno clásico"
@@ -162,7 +162,7 @@ export default function ComidasGuardadasPage() {
             />
             {error && <p className="field-error">{error}</p>}
             <button type="submit" disabled={creando}>
-              {creando ? 'Creando...' : '+ Crear comida guardada'}
+              {creando ? 'Creando...' : '+ Crear comida'}
             </button>
           </form>
         </section>

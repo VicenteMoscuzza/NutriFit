@@ -108,7 +108,7 @@ export default function ModalNuevaComida({
     event.preventDefault()
     const comidaGuardada = comidasGuardadas.find((c) => String(c.id) === comidaGuardadaSeleccionada)
     if (!comidaGuardada) {
-      setError('Elegí una comida guardada')
+      setError('Elegí una de tus comidas')
       return
     }
     const clave = siguienteClave.current++
@@ -118,7 +118,7 @@ export default function ModalNuevaComida({
 
   async function handleGuardar() {
     if (pendientes.length === 0) {
-      setError('Agregá al menos un alimento o una comida guardada')
+      setError('Agregá al menos un alimento o una de tus comidas')
       return
     }
     setError('')
@@ -166,7 +166,7 @@ export default function ModalNuevaComida({
               className={pestania === 'guardadas' ? 'dia-tab dia-tab-activo' : 'dia-tab'}
               onClick={() => setPestania('guardadas')}
             >
-              Comida guardada
+              Mis comidas
             </button>
           </div>
 
@@ -182,10 +182,10 @@ export default function ModalNuevaComida({
 
           {pestania === 'guardadas' &&
             (comidasGuardadas.length === 0 ? (
-              <p className="dia-vacio">Todavía no tenés comidas guardadas.</p>
+              <p className="dia-vacio">Todavía no creaste ninguna comida en Mis comidas.</p>
             ) : (
               <form className="auth-form" onSubmit={handleAgregarGuardada} noValidate>
-                <label htmlFor="nueva-comida-guardada">Comida guardada</label>
+                <label htmlFor="nueva-comida-guardada">Mis comidas</label>
                 <select
                   id="nueva-comida-guardada"
                   value={comidaGuardadaSeleccionada}
@@ -215,7 +215,7 @@ export default function ModalNuevaComida({
                     <span className="grupo">
                       {pendiente.tipo === 'alimento'
                         ? `${pendiente.cantidadGramos} g`
-                        : `Comida guardada · ${pendiente.comidaGuardada.items.length} alimentos`}{' '}
+                        : `De Mis comidas · ${pendiente.comidaGuardada.items.length} alimentos`}{' '}
                       · {macrosDePendiente(pendiente).calorias.toFixed(0)} kcal
                     </span>
                     <button
