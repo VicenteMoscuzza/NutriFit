@@ -1,6 +1,10 @@
 package com.nutrifit.api;
 
+import com.nutrifit.alimentos.AlimentoNoDisponibleException;
 import com.nutrifit.entrenamiento.SerieEntrenamientoNoEncontradaException;
+import com.nutrifit.nutricion.ComidaGuardadaNoEncontradaException;
+import com.nutrifit.nutricion.ItemComidaGuardadaNoEncontradoException;
+import com.nutrifit.nutricion.ItemRegistroDiarioNoEncontradoException;
 import com.nutrifit.rutinas.DiaRutinaNoEncontradoException;
 import com.nutrifit.rutinas.EjercicioNoDisponibleException;
 import com.nutrifit.rutinas.EjercicioRutinaNoEncontradoException;
@@ -58,6 +62,26 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(SerieEntrenamientoNoEncontradaException.class)
     public ResponseEntity<Map<String, Object>> manejarSerieEntrenamientoNoEncontrada(SerieEntrenamientoNoEncontradaException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AlimentoNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> manejarAlimentoNoDisponible(AlimentoNoDisponibleException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ItemRegistroDiarioNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarItemRegistroDiarioNoEncontrado(ItemRegistroDiarioNoEncontradoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ComidaGuardadaNoEncontradaException.class)
+    public ResponseEntity<Map<String, Object>> manejarComidaGuardadaNoEncontrada(ComidaGuardadaNoEncontradaException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ItemComidaGuardadaNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarItemComidaGuardadaNoEncontrado(ItemComidaGuardadaNoEncontradoException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", ex.getMessage()));
     }
 }

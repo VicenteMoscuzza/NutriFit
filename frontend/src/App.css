@@ -658,6 +658,36 @@
   box-shadow: none;
 }
 
+/* Nutrition totals */
+.nutricion-totales {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  max-width: 560px;
+}
+
+.nutricion-total {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+}
+
+.nutricion-total-valor {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.nutricion-total-etiqueta {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
 /* Day selector on the "Hoy" page */
 .dia-selector {
   display: flex;
