@@ -51,7 +51,7 @@ export default function RegisterPage() {
   return (
     <section className="auth">
       <div className="auth-card">
-        <span className="auth-logo">N</span>
+        <img src="/favicon.svg" alt="" className="auth-logo" />
         <h1>Crear cuenta</h1>
         <p className="auth-subtitle">Empezá a organizar tus rutinas hoy.</p>
         <form className="auth-form" onSubmit={handleSubmit} noValidate>

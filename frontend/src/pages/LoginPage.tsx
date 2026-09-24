@@ -35,7 +35,7 @@ export default function LoginPage() {
   return (
     <section className="auth">
       <div className="auth-card">
-        <span className="auth-logo">N</span>
+        <img src="/favicon.svg" alt="" className="auth-logo" />
         <h1>Iniciar sesión</h1>
         <p className="auth-subtitle">Ingresá tus datos para continuar.</p>
         <form className="auth-form" onSubmit={handleSubmit} noValidate>

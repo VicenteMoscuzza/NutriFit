@@ -27,8 +27,8 @@ export default function Navbar() {
     <header className="navbar">
       <div className="navbar-inner">
         <Link to="/" className="navbar-brand">
-          <span className="navbar-logo">N</span>
-          Nutrifit
+          <img src="/favicon.svg" alt="" className="navbar-logo" />
+          NutriFit
         </Link>
         <nav className="navbar-links">
           {NAV_LINKS.map((link) => (
