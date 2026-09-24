@@ -10,5 +10,5 @@ public interface ComidaRegistradaRepository extends JpaRepository<ComidaRegistra
 
     Optional<ComidaRegistrada> findByIdAndRegistroDiarioUsuarioId(Long id, Long usuarioId);
 
-    int countByRegistroDiarioId(Long registroDiarioId);
+    int countByRegistroDiarioIdAndIdLessThanEqual(Long registroDiarioId, Long id);
 }

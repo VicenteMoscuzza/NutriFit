@@ -1,6 +1,5 @@
 package com.nutrifit.nutricion;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -30,7 +29,4 @@ public class ComidaRegistrada {
     @JoinColumn(name = "meal_log_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private RegistroDiario registroDiario;
-
-    @Column(name = "name", nullable = false)
-    private String nombre;
 }

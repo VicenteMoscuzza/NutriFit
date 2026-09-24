@@ -8,6 +8,10 @@ const NAV_LINKS = [
   { to: '/nutricion', label: 'Nutrición' },
 ]
 
+function estaActivo(pathname: string, to: string) {
+  return to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(`${to}/`)
+}
+
 export default function Navbar() {
   const { usuario, cerrarSesion } = useAuth()
   const navigate = useNavigate()
@@ -30,7 +34,7 @@ export default function Navbar() {
             <Link
               key={link.to}
               to={link.to}
-              className={location.pathname === link.to ? 'navbar-link active' : 'navbar-link'}
+              className={estaActivo(location.pathname, link.to) ? 'navbar-link active' : 'navbar-link'}
             >
               {link.label}
             </Link>

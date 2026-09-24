@@ -69,3 +69,5 @@ WHERE NOT EXISTS (SELECT 1 FROM foods WHERE name = 'Yogur natural' AND is_global
 INSERT INTO foods (name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, is_global)
 SELECT 'Almendras', 579, 21, 22, 50, true
 WHERE NOT EXISTS (SELECT 1 FROM foods WHERE name = 'Almendras' AND is_global = true);
+
+ALTER TABLE IF EXISTS meal_entries DROP COLUMN IF EXISTS name;

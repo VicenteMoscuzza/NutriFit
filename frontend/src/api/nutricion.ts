@@ -13,7 +13,7 @@ export interface ItemRegistro {
 
 export interface ComidaRegistrada {
   id: number
-  nombre: string
+  numero: number
   items: ItemRegistro[]
   subtotalCalorias: number
   subtotalProteina: number
@@ -48,24 +48,22 @@ export function obtenerRegistroDeHoy() {
   return apiFetch<RegistroDiario>('/api/nutricion/registro')
 }
 
-export function crearComida(nombre?: string) {
+export interface ItemComidaNueva {
+  alimentoId: number
+  cantidadGramos: number
+}
+
+export function crearComida(items: ItemComidaNueva[], comidasGuardadasIds: number[]) {
   return apiFetch<ComidaRegistrada>('/api/nutricion/registro/comidas', {
     method: 'POST',
-    body: JSON.stringify({ nombre }),
+    body: JSON.stringify({ items, comidasGuardadasIds }),
   })
 }
 
-export function crearComidaDesdeGuardada(comidaGuardadaId: number) {
-  return apiFetch<ComidaRegistrada>('/api/nutricion/registro/comidas/desde-guardada', {
+export function cargarComidaGuardada(comidaId: number, comidaGuardadaId: number) {
+  return apiFetch<ComidaRegistrada>(`/api/nutricion/registro/comidas/${comidaId}/comida-guardada`, {
     method: 'POST',
     body: JSON.stringify({ comidaGuardadaId }),
-  })
-}
-
-export function renombrarComida(id: number, nombre: string) {
-  return apiFetch<ComidaRegistrada>(`/api/nutricion/registro/comidas/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify({ nombre }),
   })
 }
 

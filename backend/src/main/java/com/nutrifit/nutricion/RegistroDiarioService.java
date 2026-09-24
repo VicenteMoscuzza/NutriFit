@@ -7,6 +7,7 @@ import com.nutrifit.usuarios.Usuario;
 import com.nutrifit.usuarios.UsuarioService;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,12 +30,19 @@ public class RegistroDiarioService {
     }
 
     private RegistroDiarioResponse construirRespuesta(RegistroDiario registro) {
-        List<ComidaRegistradaResponse> comidas = comidaRegistradaRepository
-                .findByRegistroDiarioIdOrderByIdAsc(registro.getId()).stream()
-                .map(comida -> ComidaRegistradaResponse.desde(comida, obtenerItems(comida.getId())))
+        List<ComidaRegistrada> entidades = comidaRegistradaRepository.findByRegistroDiarioIdOrderByIdAsc(registro.getId());
+        List<ComidaRegistradaResponse> comidas = IntStream.range(0, entidades.size())
+                .mapToObj(i -> ComidaRegistradaResponse.desde(
+                        entidades.get(i), i + 1, obtenerItems(entidades.get(i).getId())))
                 .toList();
 
         return RegistroDiarioResponse.desde(registro, comidas);
+    }
+
+    ComidaRegistradaResponse construirRespuesta(ComidaRegistrada comida) {
+        int numero = comidaRegistradaRepository.countByRegistroDiarioIdAndIdLessThanEqual(
+                comida.getRegistroDiario().getId(), comida.getId());
+        return ComidaRegistradaResponse.desde(comida, numero, obtenerItems(comida.getId()));
     }
 
     List<ItemRegistroResponse> obtenerItems(Long comidaId) {

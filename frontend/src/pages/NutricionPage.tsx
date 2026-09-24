@@ -1,21 +1,17 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import ModalNuevaComida from '../components/ModalNuevaComida'
 import Navbar from '../components/Navbar'
 import SelectorAlimento from '../components/SelectorAlimento'
 import { listarAlimentos, type Alimento } from '../api/alimentos'
 import { ApiError } from '../api/client'
 import {
   agregarItemComida,
-  agregarItemComidaGuardada,
-  crearComida,
-  crearComidaDesdeGuardada,
-  crearComidaGuardada,
+  cargarComidaGuardada,
   eliminarComida,
-  eliminarComidaGuardada,
-  eliminarItemComidaGuardada,
   eliminarItemRegistro,
   listarComidasGuardadas,
   obtenerRegistroDeHoy,
-  renombrarComida,
   type ComidaGuardada,
   type ComidaRegistrada,
   type ItemRegistro,
@@ -24,9 +20,11 @@ import {
 
 interface ComidaCardProps {
   comida: ComidaRegistrada
+  numero: number
   alimentosDisponibles: Alimento[]
+  comidasGuardadas: ComidaGuardada[]
   onAlimentoCreado: (alimento: Alimento) => void
-  onRenombrada: (comida: ComidaRegistrada) => void
+  onActualizada: (comida: ComidaRegistrada) => void
   onEliminada: (comidaId: number) => void
   onItemAgregado: (comidaId: number, item: ItemRegistro) => void
   onItemEliminado: (comidaId: number, itemId: number) => void
@@ -34,36 +32,32 @@ interface ComidaCardProps {
 
 function ComidaCard({
   comida,
+  numero,
   alimentosDisponibles,
+  comidasGuardadas,
   onAlimentoCreado,
-  onRenombrada,
+  onActualizada,
   onEliminada,
   onItemAgregado,
   onItemEliminado,
 }: ComidaCardProps) {
-  const [editando, setEditando] = useState(false)
-  const [nombreEditado, setNombreEditado] = useState(comida.nombre)
-  const [formularioAbierto, setFormularioAbierto] = useState(false)
-  const [guardandoNombre, setGuardandoNombre] = useState(false)
+  const [panelAbierto, setPanelAbierto] = useState<'alimento' | 'guardada' | null>(null)
+  const [comidaGuardadaSeleccionada, setComidaGuardadaSeleccionada] = useState('')
+  const [cargandoGuardada, setCargandoGuardada] = useState(false)
+  const [error, setError] = useState('')
+  const titulo = `Comida ${numero}`
 
-  async function handleGuardarNombre() {
-    if (!nombreEditado.trim() || nombreEditado.trim() === comida.nombre) {
-      setEditando(false)
-      setNombreEditado(comida.nombre)
-      return
+  function alternarPanel(panel: 'alimento' | 'guardada') {
+    setError('')
+    const seleccionVigente = comidasGuardadas.some((c) => String(c.id) === comidaGuardadaSeleccionada)
+    if (panel === 'guardada' && !seleccionVigente && comidasGuardadas.length > 0) {
+      setComidaGuardadaSeleccionada(String(comidasGuardadas[0].id))
     }
-    setGuardandoNombre(true)
-    try {
-      const actualizada = await renombrarComida(comida.id, nombreEditado.trim())
-      onRenombrada(actualizada)
-      setEditando(false)
-    } finally {
-      setGuardandoNombre(false)
-    }
+    setPanelAbierto((actual) => (actual === panel ? null : panel))
   }
 
   async function handleEliminar() {
-    if (!window.confirm(`¿Eliminar "${comida.nombre}" y todos sus alimentos?`)) {
+    if (!window.confirm(`¿Eliminar "${titulo}" y todos sus alimentos?`)) {
       return
     }
     await eliminarComida(comida.id)
@@ -75,36 +69,35 @@ function ComidaCard({
     onItemEliminado(comida.id, itemId)
   }
 
+  async function handleCargarGuardada(event: FormEvent) {
+    event.preventDefault()
+    if (!comidaGuardadaSeleccionada) {
+      setError('Elegí una comida guardada')
+      return
+    }
+    setError('')
+    setCargandoGuardada(true)
+    try {
+      const actualizada = await cargarComidaGuardada(comida.id, Number(comidaGuardadaSeleccionada))
+      onActualizada(actualizada)
+      setPanelAbierto(null)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo cargar la comida guardada')
+    } finally {
+      setCargandoGuardada(false)
+    }
+  }
+
   return (
     <div className="dia">
       <div className="dia-header">
-        {editando ? (
-          <div className="comida-nombre-editar">
-            <input value={nombreEditado} onChange={(event) => setNombreEditado(event.target.value)} autoFocus />
-            <button type="button" onClick={handleGuardarNombre} disabled={guardandoNombre}>
-              Guardar
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEditando(false)
-                setNombreEditado(comida.nombre)
-              }}
-            >
-              Cancelar
-            </button>
-          </div>
-        ) : (
-          <h2>{comida.nombre}</h2>
-        )}
+        <h2>{titulo}</h2>
         <div className="dia-acciones">
-          {!editando && (
-            <button type="button" onClick={() => setEditando(true)}>
-              Renombrar
-            </button>
-          )}
-          <button type="button" onClick={() => setFormularioAbierto((actual) => !actual)}>
-            {formularioAbierto ? 'Cancelar' : '+ Agregar alimento'}
+          <button type="button" onClick={() => alternarPanel('alimento')}>
+            {panelAbierto === 'alimento' ? 'Cancelar' : '+ Alimento'}
+          </button>
+          <button type="button" onClick={() => alternarPanel('guardada')}>
+            {panelAbierto === 'guardada' ? 'Cancelar' : '+ Comida guardada'}
           </button>
           <button type="button" className="btn-quitar-dia" onClick={handleEliminar}>
             Eliminar
@@ -118,7 +111,7 @@ function ComidaCard({
       </p>
 
       {comida.items.length === 0 ? (
-        <p className="dia-vacio">Sin alimentos</p>
+        <p className="dia-vacio">Sin alimentos. Agregá alimentos o cargá una comida guardada.</p>
       ) : (
         <ul className="lista-ejercicios">
           {comida.items.map((item) => (
@@ -135,7 +128,7 @@ function ComidaCard({
         </ul>
       )}
 
-      {formularioAbierto && (
+      {panelAbierto === 'alimento' && (
         <SelectorAlimento
           idPrefix={`comida-${comida.id}`}
           alimentosDisponibles={alimentosDisponibles}
@@ -146,130 +139,30 @@ function ComidaCard({
           }}
         />
       )}
-    </div>
-  )
-}
 
-interface GestionComidasGuardadasProps {
-  comidasGuardadas: ComidaGuardada[]
-  alimentosDisponibles: Alimento[]
-  onAlimentoCreado: (alimento: Alimento) => void
-  onComidasGuardadasChange: (comidas: ComidaGuardada[]) => void
-}
-
-function GestionComidasGuardadas({
-  comidasGuardadas,
-  alimentosDisponibles,
-  onAlimentoCreado,
-  onComidasGuardadasChange,
-}: GestionComidasGuardadasProps) {
-  const [nombreNueva, setNombreNueva] = useState('')
-  const [creando, setCreando] = useState(false)
-  const [error, setError] = useState('')
-  const [comidaFormularioAbierta, setComidaFormularioAbierta] = useState<number | null>(null)
-
-  async function handleCrear(event: FormEvent) {
-    event.preventDefault()
-    if (!nombreNueva.trim()) {
-      setError('Ingresá un nombre para la comida')
-      return
-    }
-    setError('')
-    setCreando(true)
-    try {
-      const creada = await crearComidaGuardada(nombreNueva.trim())
-      onComidasGuardadasChange([...comidasGuardadas, creada])
-      setNombreNueva('')
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo crear la comida guardada')
-    } finally {
-      setCreando(false)
-    }
-  }
-
-  async function handleEliminar(id: number) {
-    if (!window.confirm('¿Eliminar esta comida guardada?')) {
-      return
-    }
-    await eliminarComidaGuardada(id)
-    onComidasGuardadasChange(comidasGuardadas.filter((c) => c.id !== id))
-  }
-
-  async function handleQuitarItem(comidaId: number, itemId: number) {
-    await eliminarItemComidaGuardada(itemId)
-    onComidasGuardadasChange(
-      comidasGuardadas.map((c) => (c.id === comidaId ? { ...c, items: c.items.filter((i) => i.id !== itemId) } : c)),
-    )
-  }
-
-  return (
-    <div className="nutricion-guardadas">
-      {comidasGuardadas.length === 0 && <p className="dia-vacio">Todavía no creaste comidas guardadas.</p>}
-
-      <div className="semana">
-        {comidasGuardadas.map((comida) => (
-          <div className="dia" key={comida.id}>
-            <div className="dia-header">
-              <h2>{comida.nombre}</h2>
-              <div className="dia-acciones">
-                <button
-                  type="button"
-                  onClick={() => setComidaFormularioAbierta((actual) => (actual === comida.id ? null : comida.id))}
-                >
-                  {comidaFormularioAbierta === comida.id ? 'Cancelar' : '+ Agregar alimento'}
-                </button>
-                <button type="button" className="btn-quitar-dia" onClick={() => handleEliminar(comida.id)}>
-                  Eliminar
-                </button>
-              </div>
-            </div>
-
-            {comida.items.length === 0 ? (
-              <p className="dia-vacio">Sin alimentos</p>
-            ) : (
-              <ul className="lista-ejercicios">
-                {comida.items.map((item) => (
-                  <li key={item.id}>
-                    <span className="nombre">{item.nombreAlimento}</span>
-                    <span className="grupo">{item.cantidadGramos} g</span>
-                    <button type="button" onClick={() => handleQuitarItem(comida.id, item.id)}>
-                      Quitar
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {comidaFormularioAbierta === comida.id && (
-              <SelectorAlimento
-                idPrefix={`guardada-${comida.id}`}
-                alimentosDisponibles={alimentosDisponibles}
-                onAlimentoCreado={onAlimentoCreado}
-                onAgregar={async (alimentoId, cantidadGramos) => {
-                  const creado = await agregarItemComidaGuardada(comida.id, alimentoId, cantidadGramos)
-                  onComidasGuardadasChange(
-                    comidasGuardadas.map((c) => (c.id === comida.id ? { ...c, items: [...c.items, creado] } : c)),
-                  )
-                }}
-              />
-            )}
-          </div>
+      {panelAbierto === 'guardada' &&
+        (comidasGuardadas.length === 0 ? (
+          <p className="dia-vacio">Todavía no tenés comidas guardadas. Creá una en "Gestionar comidas guardadas".</p>
+        ) : (
+          <form className="auth-form" onSubmit={handleCargarGuardada} noValidate>
+            <label htmlFor={`comida-${comida.id}-guardada`}>Comida guardada</label>
+            <select
+              id={`comida-${comida.id}-guardada`}
+              value={comidaGuardadaSeleccionada}
+              onChange={(event) => setComidaGuardadaSeleccionada(event.target.value)}
+            >
+              {comidasGuardadas.map((guardada) => (
+                <option key={guardada.id} value={guardada.id}>
+                  {guardada.nombre} ({guardada.items.length} alimentos)
+                </option>
+              ))}
+            </select>
+            {error && <p className="field-error">{error}</p>}
+            <button type="submit" disabled={cargandoGuardada}>
+              {cargandoGuardada ? 'Cargando...' : 'Cargar alimentos'}
+            </button>
+          </form>
         ))}
-      </div>
-
-      <form className="auth-form" onSubmit={handleCrear} noValidate>
-        <label htmlFor="nombre-comida-guardada">Nueva comida guardada</label>
-        <input
-          id="nombre-comida-guardada"
-          placeholder="Ej: Desayuno clásico"
-          value={nombreNueva}
-          onChange={(event) => setNombreNueva(event.target.value)}
-        />
-        {error && <p className="field-error">{error}</p>}
-        <button type="submit" disabled={creando}>
-          {creando ? 'Creando...' : '+ Crear comida guardada'}
-        </button>
-      </form>
     </div>
   )
 }
@@ -291,13 +184,7 @@ export default function NutricionPage() {
   const [comidasGuardadas, setComidasGuardadas] = useState<ComidaGuardada[]>([])
   const [alimentosDisponibles, setAlimentosDisponibles] = useState<Alimento[]>([])
   const [cargando, setCargando] = useState(true)
-  const [mostrarGuardadas, setMostrarGuardadas] = useState(false)
-  const [error, setError] = useState('')
-  const [formularioComidaAbierto, setFormularioComidaAbierto] = useState(false)
-  const [modoCreacionComida, setModoCreacionComida] = useState<'blanco' | 'guardada'>('blanco')
-  const [nombreComidaNueva, setNombreComidaNueva] = useState('')
-  const [comidaGuardadaSeleccionada, setComidaGuardadaSeleccionada] = useState('')
-  const [creandoComida, setCreandoComida] = useState(false)
+  const [modalAbierto, setModalAbierto] = useState(false)
 
   useEffect(() => {
     Promise.all([obtenerRegistroDeHoy(), listarComidasGuardadas(), listarAlimentos()])
@@ -305,9 +192,6 @@ export default function NutricionPage() {
         setRegistro(registroData)
         setComidasGuardadas(comidasGuardadasData)
         setAlimentosDisponibles(alimentosData)
-        if (comidasGuardadasData.length > 0) {
-          setComidaGuardadaSeleccionada(String(comidasGuardadasData[0].id))
-        }
       })
       .finally(() => setCargando(false))
   }, [])
@@ -328,38 +212,31 @@ export default function NutricionPage() {
     }
   }
 
-  async function handleCrearComida(event: FormEvent) {
-    event.preventDefault()
+  const cerrarModal = useCallback(() => setModalAbierto(false), [])
 
-    if (modoCreacionComida === 'guardada' && !comidaGuardadaSeleccionada) {
-      setError('Elegí una comida guardada')
-      return
-    }
-
-    setError('')
-    setCreandoComida(true)
-    try {
-      const creada =
-        modoCreacionComida === 'blanco'
-          ? await crearComida(nombreComidaNueva.trim() || undefined)
-          : await crearComidaDesdeGuardada(Number(comidaGuardadaSeleccionada))
-
-      setRegistro((actual) => agregarComidaARegistro(actual, creada))
-      setNombreComidaNueva('')
-      setFormularioComidaAbierto(false)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo agregar la comida')
-    } finally {
-      setCreandoComida(false)
-    }
+  function handleComidaCreada(creada: ComidaRegistrada) {
+    setRegistro((actual) => agregarComidaARegistro(actual, creada))
+    setModalAbierto(false)
   }
 
-  function handleComidaRenombrada(actualizada: ComidaRegistrada) {
+  function handleComidaActualizada(actualizada: ComidaRegistrada) {
     setRegistro((actual) => {
       if (!actual) {
         return actual
       }
-      return { ...actual, comidas: actual.comidas.map((c) => (c.id === actualizada.id ? actualizada : c)) }
+      const anterior = actual.comidas.find((c) => c.id === actualizada.id)
+      if (!anterior) {
+        return actual
+      }
+      return {
+        ...actual,
+        comidas: actual.comidas.map((c) => (c.id === actualizada.id ? actualizada : c)),
+        totalCalorias: actual.totalCalorias - anterior.subtotalCalorias + actualizada.subtotalCalorias,
+        totalProteina: actual.totalProteina - anterior.subtotalProteina + actualizada.subtotalProteina,
+        totalCarbohidratos:
+          actual.totalCarbohidratos - anterior.subtotalCarbohidratos + actualizada.subtotalCarbohidratos,
+        totalGrasa: actual.totalGrasa - anterior.subtotalGrasa + actualizada.subtotalGrasa,
+      }
     })
   }
 
@@ -464,6 +341,9 @@ export default function NutricionPage() {
         <section className="page">
           <div className="page-header">
             <h1>Nutrición de hoy</h1>
+            <Link to="/nutricion/comidas-guardadas" className="btn-ghost">
+              Gestionar comidas guardadas
+            </Link>
           </div>
 
           <div className="nutricion-totales">
@@ -490,13 +370,15 @@ export default function NutricionPage() {
           )}
 
           <div className="semana">
-            {comidas.map((comida) => (
+            {comidas.map((comida, indice) => (
               <ComidaCard
                 key={comida.id}
                 comida={comida}
+                numero={indice + 1}
                 alimentosDisponibles={alimentosDisponibles}
+                comidasGuardadas={comidasGuardadas}
                 onAlimentoCreado={handleAlimentoCreado}
-                onRenombrada={handleComidaRenombrada}
+                onActualizada={handleComidaActualizada}
                 onEliminada={handleComidaEliminada}
                 onItemAgregado={handleItemAgregado}
                 onItemEliminado={handleItemEliminado}
@@ -504,95 +386,18 @@ export default function NutricionPage() {
             ))}
           </div>
 
-          <button
-            type="button"
-            className="btn-agregar-dia"
-            onClick={() => {
-              setError('')
-              setFormularioComidaAbierto((actual) => !actual)
-            }}
-          >
-            {formularioComidaAbierto ? 'Cancelar' : '+ Agregar comida'}
+          <button type="button" className="btn-agregar-dia" onClick={() => setModalAbierto(true)}>
+            + Agregar comida {comidas.length + 1}
           </button>
 
-          {formularioComidaAbierto && (
-            <form className="auth-form" onSubmit={handleCrearComida} noValidate>
-              <label htmlFor="modo-creacion-comida">Cómo querés crearla</label>
-              <div className="opciones-radio" id="modo-creacion-comida">
-                <label>
-                  <input
-                    type="radio"
-                    name="modo-creacion-comida"
-                    checked={modoCreacionComida === 'blanco'}
-                    onChange={() => setModoCreacionComida('blanco')}
-                  />
-                  Comida en blanco
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="modo-creacion-comida"
-                    checked={modoCreacionComida === 'guardada'}
-                    onChange={() => setModoCreacionComida('guardada')}
-                    disabled={comidasGuardadas.length === 0}
-                  />
-                  Desde una comida guardada
-                </label>
-              </div>
-
-              {modoCreacionComida === 'blanco' && (
-                <>
-                  <label htmlFor="nombre-comida-nueva">Nombre (opcional)</label>
-                  <input
-                    id="nombre-comida-nueva"
-                    placeholder="Comida 1"
-                    value={nombreComidaNueva}
-                    onChange={(event) => setNombreComidaNueva(event.target.value)}
-                  />
-                </>
-              )}
-
-              {modoCreacionComida === 'guardada' && (
-                comidasGuardadas.length === 0 ? (
-                  <p className="dia-vacio">Todavía no tenés comidas guardadas.</p>
-                ) : (
-                  <>
-                    <label htmlFor="comida-guardada-seleccionada">Comida guardada</label>
-                    <select
-                      id="comida-guardada-seleccionada"
-                      value={comidaGuardadaSeleccionada}
-                      onChange={(event) => setComidaGuardadaSeleccionada(event.target.value)}
-                    >
-                      {comidasGuardadas.map((comida) => (
-                        <option key={comida.id} value={comida.id}>
-                          {comida.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </>
-                )
-              )}
-
-              {error && <p className="field-error">{error}</p>}
-
-              <button type="submit" disabled={creandoComida}>
-                {creandoComida ? 'Agregando...' : 'Agregar comida'}
-              </button>
-            </form>
-          )}
-
-          <div className="nutricion-guardadas-toggle">
-            <button type="button" className="btn-ghost" onClick={() => setMostrarGuardadas((actual) => !actual)}>
-              {mostrarGuardadas ? 'Ocultar comidas guardadas' : 'Gestionar comidas guardadas'}
-            </button>
-          </div>
-
-          {mostrarGuardadas && (
-            <GestionComidasGuardadas
-              comidasGuardadas={comidasGuardadas}
+          {modalAbierto && (
+            <ModalNuevaComida
+              numero={comidas.length + 1}
               alimentosDisponibles={alimentosDisponibles}
+              comidasGuardadas={comidasGuardadas}
               onAlimentoCreado={handleAlimentoCreado}
-              onComidasGuardadasChange={setComidasGuardadas}
+              onCreada={handleComidaCreada}
+              onCerrar={cerrarModal}
             />
           )}
         </section>

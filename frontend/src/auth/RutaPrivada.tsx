@@ -10,7 +10,7 @@ export default function RutaPrivada({ children }: { children: ReactNode }) {
   }
 
   if (!usuario) {
-    return <Navigate to="/registro" replace />
+    return <Navigate to="/login" replace />
   }
 
   return <>{children}</>

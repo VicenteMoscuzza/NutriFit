@@ -7,7 +7,7 @@ import java.util.function.Function;
 
 public record ComidaRegistradaResponse(
         Long id,
-        String nombre,
+        int numero,
         List<ItemRegistroResponse> items,
         BigDecimal subtotalCalorias,
         BigDecimal subtotalProteina,
@@ -15,10 +15,10 @@ public record ComidaRegistradaResponse(
         BigDecimal subtotalGrasa
 ) {
 
-    public static ComidaRegistradaResponse desde(ComidaRegistrada comida, List<ItemRegistroResponse> items) {
+    public static ComidaRegistradaResponse desde(ComidaRegistrada comida, int numero, List<ItemRegistroResponse> items) {
         return new ComidaRegistradaResponse(
                 comida.getId(),
-                comida.getNombre(),
+                numero,
                 items,
                 sumar(items, ItemRegistroResponse::caloriasCalculadas),
                 sumar(items, ItemRegistroResponse::proteinaCalculada),
