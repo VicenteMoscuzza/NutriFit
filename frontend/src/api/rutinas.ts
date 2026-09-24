@@ -19,8 +19,17 @@ export function obtenerDias() {
   return apiFetch<DiaRutina[]>('/api/rutinas/dias')
 }
 
-export function crearDia() {
-  return apiFetch<DiaRutina>('/api/rutinas/dias', { method: 'POST' })
+export interface EjercicioDiaNuevo {
+  ejercicioId: number
+  seriesObjetivo: number
+  repeticionesObjetivo: number
+}
+
+export function crearDia(ejercicios: EjercicioDiaNuevo[]) {
+  return apiFetch<DiaRutina>('/api/rutinas/dias', {
+    method: 'POST',
+    body: JSON.stringify({ ejercicios }),
+  })
 }
 
 export function eliminarDia(id: number) {

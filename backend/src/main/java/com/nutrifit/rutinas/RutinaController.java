@@ -1,6 +1,7 @@
 package com.nutrifit.rutinas;
 
 import com.nutrifit.rutinas.dto.AgregarEjercicioRutinaRequest;
+import com.nutrifit.rutinas.dto.CrearDiaRutinaRequest;
 import com.nutrifit.rutinas.dto.DiaRutinaResponse;
 import com.nutrifit.rutinas.dto.EjercicioRutinaResponse;
 import jakarta.validation.Valid;
@@ -30,8 +31,9 @@ public class RutinaController {
     }
 
     @PostMapping("/dias")
-    public ResponseEntity<DiaRutinaResponse> agregarDia(Authentication authentication) {
-        DiaRutinaResponse creado = rutinaService.agregarDia(authentication.getName());
+    public ResponseEntity<DiaRutinaResponse> agregarDia(
+            Authentication authentication, @Valid @RequestBody CrearDiaRutinaRequest request) {
+        DiaRutinaResponse creado = rutinaService.agregarDia(authentication.getName(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 

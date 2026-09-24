@@ -1,7 +1,10 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import DialogoConfirmar from '../components/DialogoConfirmar'
+import { IconoPlato } from '../components/Iconos'
+import Modal from '../components/Modal'
+import ModalAgregarAlimento from '../components/ModalAgregarAlimento'
 import Navbar from '../components/Navbar'
-import SelectorAlimento from '../components/SelectorAlimento'
 import { listarAlimentos, type Alimento } from '../api/alimentos'
 import { ApiError } from '../api/client'
 import {
@@ -20,7 +23,9 @@ export default function ComidasGuardadasPage() {
   const [nombreNueva, setNombreNueva] = useState('')
   const [creando, setCreando] = useState(false)
   const [error, setError] = useState('')
-  const [comidaFormularioAbierta, setComidaFormularioAbierta] = useState<number | null>(null)
+  const [modalCrearAbierto, setModalCrearAbierto] = useState(false)
+  const [comidaAgregando, setComidaAgregando] = useState<ComidaGuardada | null>(null)
+  const [comidaAEliminar, setComidaAEliminar] = useState<ComidaGuardada | null>(null)
 
   useEffect(() => {
     Promise.all([listarComidasGuardadas(), listarAlimentos()])
@@ -47,7 +52,8 @@ export default function ComidasGuardadasPage() {
       const creada = await crearComidaGuardada(nombreNueva.trim())
       setComidasGuardadas((actuales) => [...actuales, creada])
       setNombreNueva('')
-      setComidaFormularioAbierta(creada.id)
+      setModalCrearAbierto(false)
+      setComidaAgregando(creada)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo crear la comida')
     } finally {
@@ -55,10 +61,13 @@ export default function ComidasGuardadasPage() {
     }
   }
 
+  function cerrarModalCrear() {
+    setModalCrearAbierto(false)
+    setNombreNueva('')
+    setError('')
+  }
+
   async function handleEliminar(id: number) {
-    if (!window.confirm('¿Eliminar esta comida de Mis comidas?')) {
-      return
-    }
     await eliminarComidaGuardada(id)
     setComidasGuardadas((actuales) => actuales.filter((c) => c.id !== id))
   }
@@ -107,13 +116,10 @@ export default function ComidasGuardadasPage() {
                 <div className="dia-header">
                   <h2>{comida.nombre}</h2>
                   <div className="dia-acciones">
-                    <button
-                      type="button"
-                      onClick={() => setComidaFormularioAbierta((actual) => (actual === comida.id ? null : comida.id))}
-                    >
-                      {comidaFormularioAbierta === comida.id ? 'Cancelar' : '+ Agregar alimento'}
+                    <button type="button" onClick={() => setComidaAgregando(comida)}>
+                      + Agregar alimento
                     </button>
-                    <button type="button" className="btn-quitar-dia" onClick={() => handleEliminar(comida.id)}>
+                    <button type="button" className="btn-quitar-dia" onClick={() => setComidaAEliminar(comida)}>
                       Eliminar
                     </button>
                   </div>
@@ -135,36 +141,74 @@ export default function ComidasGuardadasPage() {
                   </ul>
                 )}
 
-                {comidaFormularioAbierta === comida.id && (
-                  <SelectorAlimento
-                    idPrefix={`guardada-${comida.id}`}
-                    alimentosDisponibles={alimentosDisponibles}
-                    onAlimentoCreado={handleAlimentoCreado}
-                    onAgregar={async (alimentoId, cantidadGramos) => {
-                      const creado = await agregarItemComidaGuardada(comida.id, alimentoId, cantidadGramos)
-                      setComidasGuardadas((actuales) =>
-                        actuales.map((c) => (c.id === comida.id ? { ...c, items: [...c.items, creado] } : c)),
-                      )
-                    }}
-                  />
-                )}
               </div>
             ))}
           </div>
 
-          <form className="auth-form" onSubmit={handleCrear} noValidate>
-            <label htmlFor="nombre-comida-guardada">Nueva comida</label>
-            <input
-              id="nombre-comida-guardada"
-              placeholder="Ej: Desayuno clásico"
-              value={nombreNueva}
-              onChange={(event) => setNombreNueva(event.target.value)}
+          <button type="button" className="btn-agregar-dia" onClick={() => setModalCrearAbierto(true)}>
+            + Crear comida
+          </button>
+
+          {modalCrearAbierto && (
+            <Modal
+              titulo="Nueva comida"
+              subtitulo="Ponele un nombre y después le agregás los alimentos."
+              icono={<IconoPlato />}
+              tamanio="chico"
+              onCerrar={cerrarModalCrear}
+              bloqueado={creando}
+              pie={
+                <>
+                  <button type="button" className="btn btn-secundario" onClick={cerrarModalCrear} disabled={creando}>
+                    Cancelar
+                  </button>
+                  <button type="submit" form="form-nueva-comida" className="btn btn-primario" disabled={creando}>
+                    {creando ? 'Creando...' : 'Crear y agregar alimentos'}
+                  </button>
+                </>
+              }
+            >
+              <form id="form-nueva-comida" className="selector" onSubmit={handleCrear} noValidate>
+                <div className="campo">
+                  <label htmlFor="nombre-comida-guardada">Nombre</label>
+                  <input
+                    id="nombre-comida-guardada"
+                    className="input"
+                    placeholder="Ej: Desayuno clásico"
+                    value={nombreNueva}
+                    onChange={(event) => setNombreNueva(event.target.value)}
+                    data-autofocus
+                  />
+                </div>
+                {error && <p className="field-error">{error}</p>}
+              </form>
+            </Modal>
+          )}
+
+          {comidaAgregando && (
+            <ModalAgregarAlimento
+              titulo={comidaAgregando.nombre}
+              alimentosDisponibles={alimentosDisponibles}
+              onAlimentoCreado={handleAlimentoCreado}
+              onAgregar={async (alimentoId, cantidadGramos) => {
+                const comidaId = comidaAgregando.id
+                const creado = await agregarItemComidaGuardada(comidaId, alimentoId, cantidadGramos)
+                setComidasGuardadas((actuales) =>
+                  actuales.map((c) => (c.id === comidaId ? { ...c, items: [...c.items, creado] } : c)),
+                )
+              }}
+              onCerrar={() => setComidaAgregando(null)}
             />
-            {error && <p className="field-error">{error}</p>}
-            <button type="submit" disabled={creando}>
-              {creando ? 'Creando...' : '+ Crear comida'}
-            </button>
-          </form>
+          )}
+
+          {comidaAEliminar && (
+            <DialogoConfirmar
+              titulo={`¿Eliminar "${comidaAEliminar.nombre}"?`}
+              mensaje="Se va a quitar de Mis comidas junto con sus alimentos."
+              onConfirmar={() => handleEliminar(comidaAEliminar.id)}
+              onCerrar={() => setComidaAEliminar(null)}
+            />
+          )}
         </section>
       </main>
     </>

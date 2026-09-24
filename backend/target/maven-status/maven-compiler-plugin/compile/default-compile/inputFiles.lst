@@ -64,6 +64,7 @@ C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifi
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\DiaRutinaNoEncontradoException.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\DiaRutinaRepository.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\dto\AgregarEjercicioRutinaRequest.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\dto\CrearDiaRutinaRequest.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\dto\DiaRutinaResponse.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\dto\EjercicioRutinaResponse.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\EjercicioNoDisponibleException.java

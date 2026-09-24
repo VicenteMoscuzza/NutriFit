@@ -1,8 +1,11 @@
-import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import DialogoConfirmar from '../components/DialogoConfirmar'
+import { IconoMas, IconoPlato } from '../components/Iconos'
+import Modal from '../components/Modal'
+import ModalAgregarAlimento from '../components/ModalAgregarAlimento'
 import ModalNuevaComida from '../components/ModalNuevaComida'
 import Navbar from '../components/Navbar'
-import SelectorAlimento from '../components/SelectorAlimento'
 import { listarAlimentos, type Alimento } from '../api/alimentos'
 import { ApiError } from '../api/client'
 import {
@@ -17,6 +20,75 @@ import {
   type ItemRegistro,
   type RegistroDiario,
 } from '../api/nutricion'
+
+interface ModalCargarGuardadaProps {
+  titulo: string
+  comidasGuardadas: ComidaGuardada[]
+  onCargar: (comidaGuardadaId: number) => Promise<void>
+  onCerrar: () => void
+}
+
+function ModalCargarGuardada({ titulo, comidasGuardadas, onCargar, onCerrar }: ModalCargarGuardadaProps) {
+  const [cargandoId, setCargandoId] = useState<number | null>(null)
+  const [error, setError] = useState('')
+
+  async function handleCargar(id: number) {
+    setError('')
+    setCargandoId(id)
+    try {
+      await onCargar(id)
+      onCerrar()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo cargar la comida')
+      setCargandoId(null)
+    }
+  }
+
+  return (
+    <Modal
+      titulo="Cargar de Mis comidas"
+      subtitulo={titulo}
+      icono={<IconoPlato />}
+      tamanio="chico"
+      onCerrar={onCerrar}
+      bloqueado={cargandoId !== null}
+    >
+      {comidasGuardadas.length === 0 ? (
+        <div className="estado-vacio">
+          <p>Todavía no creaste ninguna comida en Mis comidas.</p>
+          <Link to="/nutricion/mis-comidas" className="btn btn-secundario">
+            Ir a Mis comidas
+          </Link>
+        </div>
+      ) : (
+        <div className="opciones opciones-altas">
+          {comidasGuardadas.map((guardada) => (
+            <button
+              key={guardada.id}
+              type="button"
+              className="opcion"
+              onClick={() => handleCargar(guardada.id)}
+              disabled={cargandoId !== null}
+            >
+              <span className="opcion-texto">
+                <span className="opcion-nombre">{guardada.nombre}</span>
+                <span className="opcion-detalle">
+                  {guardada.items.length === 0
+                    ? 'Sin alimentos'
+                    : guardada.items.map((item) => item.nombreAlimento).join(', ')}
+                </span>
+              </span>
+              <span className="opcion-agregar">
+                {cargandoId === guardada.id ? <span className="spinner" /> : <IconoMas tamanio={16} />}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+      {error && <p className="field-error">{error}</p>}
+    </Modal>
+  )
+}
 
 interface ComidaCardProps {
   comida: ComidaRegistrada
@@ -41,25 +113,10 @@ function ComidaCard({
   onItemAgregado,
   onItemEliminado,
 }: ComidaCardProps) {
-  const [panelAbierto, setPanelAbierto] = useState<'alimento' | 'guardada' | null>(null)
-  const [comidaGuardadaSeleccionada, setComidaGuardadaSeleccionada] = useState('')
-  const [cargandoGuardada, setCargandoGuardada] = useState(false)
-  const [error, setError] = useState('')
+  const [modalAbierto, setModalAbierto] = useState<'alimento' | 'guardada' | 'eliminar' | null>(null)
   const titulo = `Comida ${numero}`
 
-  function alternarPanel(panel: 'alimento' | 'guardada') {
-    setError('')
-    const seleccionVigente = comidasGuardadas.some((c) => String(c.id) === comidaGuardadaSeleccionada)
-    if (panel === 'guardada' && !seleccionVigente && comidasGuardadas.length > 0) {
-      setComidaGuardadaSeleccionada(String(comidasGuardadas[0].id))
-    }
-    setPanelAbierto((actual) => (actual === panel ? null : panel))
-  }
-
   async function handleEliminar() {
-    if (!window.confirm(`¿Eliminar "${titulo}" y todos sus alimentos?`)) {
-      return
-    }
     await eliminarComida(comida.id)
     onEliminada(comida.id)
   }
@@ -69,23 +126,9 @@ function ComidaCard({
     onItemEliminado(comida.id, itemId)
   }
 
-  async function handleCargarGuardada(event: FormEvent) {
-    event.preventDefault()
-    if (!comidaGuardadaSeleccionada) {
-      setError('Elegí una de tus comidas')
-      return
-    }
-    setError('')
-    setCargandoGuardada(true)
-    try {
-      const actualizada = await cargarComidaGuardada(comida.id, Number(comidaGuardadaSeleccionada))
-      onActualizada(actualizada)
-      setPanelAbierto(null)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo cargar la comida')
-    } finally {
-      setCargandoGuardada(false)
-    }
+  async function handleCargarGuardada(comidaGuardadaId: number) {
+    const actualizada = await cargarComidaGuardada(comida.id, comidaGuardadaId)
+    onActualizada(actualizada)
   }
 
   return (
@@ -93,13 +136,13 @@ function ComidaCard({
       <div className="dia-header">
         <h2>{titulo}</h2>
         <div className="dia-acciones">
-          <button type="button" onClick={() => alternarPanel('alimento')}>
-            {panelAbierto === 'alimento' ? 'Cancelar' : '+ Alimento'}
+          <button type="button" onClick={() => setModalAbierto('alimento')}>
+            + Alimento
           </button>
-          <button type="button" onClick={() => alternarPanel('guardada')}>
-            {panelAbierto === 'guardada' ? 'Cancelar' : '+ Mis comidas'}
+          <button type="button" onClick={() => setModalAbierto('guardada')}>
+            + Mis comidas
           </button>
-          <button type="button" className="btn-quitar-dia" onClick={handleEliminar}>
+          <button type="button" className="btn-quitar-dia" onClick={() => setModalAbierto('eliminar')}>
             Eliminar
           </button>
         </div>
@@ -128,41 +171,36 @@ function ComidaCard({
         </ul>
       )}
 
-      {panelAbierto === 'alimento' && (
-        <SelectorAlimento
-          idPrefix={`comida-${comida.id}`}
+      {modalAbierto === 'alimento' && (
+        <ModalAgregarAlimento
+          titulo={titulo}
           alimentosDisponibles={alimentosDisponibles}
           onAlimentoCreado={onAlimentoCreado}
           onAgregar={async (alimentoId, cantidadGramos) => {
             const creado = await agregarItemComida(comida.id, alimentoId, cantidadGramos)
             onItemAgregado(comida.id, creado)
           }}
+          onCerrar={() => setModalAbierto(null)}
         />
       )}
 
-      {panelAbierto === 'guardada' &&
-        (comidasGuardadas.length === 0 ? (
-          <p className="dia-vacio">Todavía no creaste ninguna comida en Mis comidas.</p>
-        ) : (
-          <form className="auth-form" onSubmit={handleCargarGuardada} noValidate>
-            <label htmlFor={`comida-${comida.id}-guardada`}>Mis comidas</label>
-            <select
-              id={`comida-${comida.id}-guardada`}
-              value={comidaGuardadaSeleccionada}
-              onChange={(event) => setComidaGuardadaSeleccionada(event.target.value)}
-            >
-              {comidasGuardadas.map((guardada) => (
-                <option key={guardada.id} value={guardada.id}>
-                  {guardada.nombre} ({guardada.items.length} alimentos)
-                </option>
-              ))}
-            </select>
-            {error && <p className="field-error">{error}</p>}
-            <button type="submit" disabled={cargandoGuardada}>
-              {cargandoGuardada ? 'Cargando...' : 'Cargar alimentos'}
-            </button>
-          </form>
-        ))}
+      {modalAbierto === 'guardada' && (
+        <ModalCargarGuardada
+          titulo={titulo}
+          comidasGuardadas={comidasGuardadas}
+          onCargar={handleCargarGuardada}
+          onCerrar={() => setModalAbierto(null)}
+        />
+      )}
+
+      {modalAbierto === 'eliminar' && (
+        <DialogoConfirmar
+          titulo={`¿Eliminar ${titulo.toLowerCase()}?`}
+          mensaje="Se van a eliminar la comida y todos sus alimentos del registro de hoy."
+          onConfirmar={handleEliminar}
+          onCerrar={() => setModalAbierto(null)}
+        />
+      )}
     </div>
   )
 }

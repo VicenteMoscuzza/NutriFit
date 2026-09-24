@@ -3,6 +3,7 @@ package com.nutrifit.rutinas;
 import com.nutrifit.ejercicios.Ejercicio;
 import com.nutrifit.ejercicios.EjercicioRepository;
 import com.nutrifit.rutinas.dto.AgregarEjercicioRutinaRequest;
+import com.nutrifit.rutinas.dto.CrearDiaRutinaRequest;
 import com.nutrifit.rutinas.dto.DiaRutinaResponse;
 import com.nutrifit.rutinas.dto.EjercicioRutinaResponse;
 import com.nutrifit.usuarios.Usuario;
@@ -45,14 +46,18 @@ public class RutinaService {
     }
 
     @Transactional
-    public DiaRutinaResponse agregarDia(String email) {
+    public DiaRutinaResponse agregarDia(String email, CrearDiaRutinaRequest request) {
         Usuario usuario = usuarioService.obtenerEntidadAutenticada(email);
         Rutina rutina = rutinaRepository.findByUsuarioId(usuario.getId())
                 .orElseGet(() -> crearRutina(usuario));
 
         int siguienteNumero = diaRutinaRepository.countByRutinaId(rutina.getId()) + 1;
         DiaRutina dia = crearDia(rutina, siguienteNumero);
-        return DiaRutinaResponse.desde(dia, List.of());
+
+        List<EjercicioRutinaResponse> ejercicios = request.ejercicios().stream()
+                .map(ejercicio -> crearEjercicioRutina(usuario, dia, ejercicio))
+                .toList();
+        return DiaRutinaResponse.desde(dia, ejercicios);
     }
 
     @Transactional
@@ -77,6 +82,11 @@ public class RutinaService {
         DiaRutina diaRutina = diaRutinaRepository.findByIdAndRutinaUsuarioId(diaId, usuario.getId())
                 .orElseThrow(DiaRutinaNoEncontradoException::new);
 
+        return crearEjercicioRutina(usuario, diaRutina, request);
+    }
+
+    private EjercicioRutinaResponse crearEjercicioRutina(
+            Usuario usuario, DiaRutina diaRutina, AgregarEjercicioRutinaRequest request) {
         Ejercicio ejercicio = ejercicioRepository.findById(request.ejercicioId())
                 .filter(e -> e.isEsGlobal() || esPropietario(e, usuario))
                 .orElseThrow(EjercicioNoDisponibleException::new);

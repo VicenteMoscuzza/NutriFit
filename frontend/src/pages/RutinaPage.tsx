@@ -1,107 +1,52 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import DialogoConfirmar from '../components/DialogoConfirmar'
+import ModalAgregarEjercicio from '../components/ModalAgregarEjercicio'
+import ModalNuevoDia from '../components/ModalNuevoDia'
 import Navbar from '../components/Navbar'
-import { crearEjercicio, listarEjercicios, type Ejercicio } from '../api/ejercicios'
-import { ApiError } from '../api/client'
-import {
-  agregarEjercicioADia,
-  crearDia,
-  eliminarDia,
-  eliminarEjercicioDeDia,
-  obtenerDias,
-  type DiaRutina,
-} from '../api/rutinas'
-
-const GRUPOS_MUSCULARES = ['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core']
-const EJERCICIO_NUEVO = '__nuevo__'
+import { listarEjercicios, type Ejercicio } from '../api/ejercicios'
+import { agregarEjercicioADia, eliminarDia, eliminarEjercicioDeDia, obtenerDias, type DiaRutina } from '../api/rutinas'
 
 export default function RutinaPage() {
   const [dias, setDias] = useState<DiaRutina[]>([])
   const [ejerciciosDisponibles, setEjerciciosDisponibles] = useState<Ejercicio[]>([])
   const [cargando, setCargando] = useState(true)
-  const [diaFormularioAbierto, setDiaFormularioAbierto] = useState<number | null>(null)
-  const [ejercicioSeleccionado, setEjercicioSeleccionado] = useState('')
-  const [nombreNuevoEjercicio, setNombreNuevoEjercicio] = useState('')
-  const [grupoNuevoEjercicio, setGrupoNuevoEjercicio] = useState(GRUPOS_MUSCULARES[0])
-  const [series, setSeries] = useState('4')
-  const [repeticiones, setRepeticiones] = useState('10')
-  const [error, setError] = useState('')
-  const [guardando, setGuardando] = useState(false)
-  const [agregandoDia, setAgregandoDia] = useState(false)
+  const [diaAgregando, setDiaAgregando] = useState<DiaRutina | null>(null)
+  const [diaAQuitar, setDiaAQuitar] = useState<DiaRutina | null>(null)
+  const [modalAbierto, setModalAbierto] = useState(false)
 
   useEffect(() => {
     Promise.all([obtenerDias(), listarEjercicios()])
       .then(([diasData, ejerciciosData]) => {
         setDias(diasData)
         setEjerciciosDisponibles(ejerciciosData)
-        setEjercicioSeleccionado(ejerciciosData.length > 0 ? String(ejerciciosData[0].id) : EJERCICIO_NUEVO)
       })
       .finally(() => setCargando(false))
   }, [])
 
-  function alternarFormulario(diaId: number) {
-    setError('')
-    setDiaFormularioAbierto((actual) => (actual === diaId ? null : diaId))
+  const cerrarModal = useCallback(() => setModalAbierto(false), [])
+
+  function handleEjercicioCreado(ejercicio: Ejercicio) {
+    setEjerciciosDisponibles((actuales) => [...actuales, ejercicio])
   }
 
-  async function handleAgregarDia() {
-    setError('')
-    setAgregandoDia(true)
-    try {
-      const creado = await crearDia()
-      setDias((actual) => [...actual, creado])
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo agregar el día')
-    } finally {
-      setAgregandoDia(false)
-    }
+  function handleDiaCreado(dia: DiaRutina) {
+    setDias((actual) => [...actual, dia])
+    setModalAbierto(false)
   }
 
   async function handleQuitarDia(diaId: number) {
-    if (!window.confirm('¿Quitar este día y todos sus ejercicios?')) {
-      return
-    }
     await eliminarDia(diaId)
     setDias(await obtenerDias())
   }
 
-  async function handleAgregar(event: FormEvent, diaId: number) {
-    event.preventDefault()
-
-    let ejercicioId: number
-
-    if (ejercicioSeleccionado === EJERCICIO_NUEVO) {
-      if (!nombreNuevoEjercicio.trim()) {
-        setError('Ingresá un nombre para el ejercicio')
-        return
-      }
-    } else if (!ejercicioSeleccionado) {
-      setError('Elegí un ejercicio')
-      return
-    }
-
-    setError('')
-    setGuardando(true)
-    try {
-      if (ejercicioSeleccionado === EJERCICIO_NUEVO) {
-        const nuevo = await crearEjercicio(nombreNuevoEjercicio.trim(), grupoNuevoEjercicio)
-        setEjerciciosDisponibles((actuales) => [...actuales, nuevo])
-        ejercicioId = nuevo.id
-        setEjercicioSeleccionado(String(nuevo.id))
-        setNombreNuevoEjercicio('')
-      } else {
-        ejercicioId = Number(ejercicioSeleccionado)
-      }
-
-      const creado = await agregarEjercicioADia(diaId, ejercicioId, Number(series), Number(repeticiones))
-      setDias((actual) =>
-        actual.map((d) => (d.id === diaId ? { ...d, ejercicios: [...d.ejercicios, creado] } : d)),
-      )
-      setDiaFormularioAbierto(null)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo agregar el ejercicio')
-    } finally {
-      setGuardando(false)
-    }
+  async function handleAgregarEjercicio(
+    diaId: number,
+    ejercicio: Ejercicio,
+    seriesObjetivo: number,
+    repeticionesObjetivo: number,
+  ) {
+    const creado = await agregarEjercicioADia(diaId, ejercicio.id, seriesObjetivo, repeticionesObjetivo)
+    setDias((actual) => actual.map((d) => (d.id === diaId ? { ...d, ejercicios: [...d.ejercicios, creado] } : d)))
   }
 
   async function handleQuitar(diaId: number, id: number) {
@@ -141,10 +86,10 @@ export default function RutinaPage() {
                 <div className="dia-header">
                   <h2>Día {dia.numero}</h2>
                   <div className="dia-acciones">
-                    <button type="button" onClick={() => alternarFormulario(dia.id)}>
-                      {diaFormularioAbierto === dia.id ? 'Cancelar' : '+ Agregar ejercicio'}
+                    <button type="button" onClick={() => setDiaAgregando(dia)}>
+                      + Agregar ejercicio
                     </button>
-                    <button type="button" className="btn-quitar-dia" onClick={() => handleQuitarDia(dia.id)}>
+                    <button type="button" className="btn-quitar-dia" onClick={() => setDiaAQuitar(dia)}>
                       Quitar día
                     </button>
                   </div>
@@ -167,79 +112,45 @@ export default function RutinaPage() {
                     ))}
                   </ul>
                 )}
-
-                {diaFormularioAbierto === dia.id && (
-                  <form className="auth-form" onSubmit={(event) => handleAgregar(event, dia.id)} noValidate>
-                    <label htmlFor={`ejercicio-${dia.id}`}>Ejercicio</label>
-                    <select
-                      id={`ejercicio-${dia.id}`}
-                      value={ejercicioSeleccionado}
-                      onChange={(event) => setEjercicioSeleccionado(event.target.value)}
-                    >
-                      {ejerciciosDisponibles.map((ejercicio) => (
-                        <option key={ejercicio.id} value={ejercicio.id}>
-                          {ejercicio.nombre} ({ejercicio.grupoMuscular})
-                        </option>
-                      ))}
-                      <option value={EJERCICIO_NUEVO}>+ Crear ejercicio nuevo...</option>
-                    </select>
-
-                    {ejercicioSeleccionado === EJERCICIO_NUEVO && (
-                      <>
-                        <label htmlFor={`nombre-nuevo-${dia.id}`}>Nombre del ejercicio</label>
-                        <input
-                          id={`nombre-nuevo-${dia.id}`}
-                          value={nombreNuevoEjercicio}
-                          onChange={(event) => setNombreNuevoEjercicio(event.target.value)}
-                        />
-
-                        <label htmlFor={`grupo-nuevo-${dia.id}`}>Grupo muscular</label>
-                        <select
-                          id={`grupo-nuevo-${dia.id}`}
-                          value={grupoNuevoEjercicio}
-                          onChange={(event) => setGrupoNuevoEjercicio(event.target.value)}
-                        >
-                          {GRUPOS_MUSCULARES.map((grupo) => (
-                            <option key={grupo} value={grupo}>
-                              {grupo}
-                            </option>
-                          ))}
-                        </select>
-                      </>
-                    )}
-
-                    <label htmlFor={`series-${dia.id}`}>Series</label>
-                    <input
-                      id={`series-${dia.id}`}
-                      type="number"
-                      min={1}
-                      value={series}
-                      onChange={(event) => setSeries(event.target.value)}
-                    />
-
-                    <label htmlFor={`reps-${dia.id}`}>Repeticiones</label>
-                    <input
-                      id={`reps-${dia.id}`}
-                      type="number"
-                      min={1}
-                      value={repeticiones}
-                      onChange={(event) => setRepeticiones(event.target.value)}
-                    />
-
-                    {error && <p className="field-error">{error}</p>}
-
-                    <button type="submit" disabled={guardando}>
-                      {guardando ? 'Agregando...' : 'Agregar'}
-                    </button>
-                  </form>
-                )}
               </div>
             ))}
           </div>
 
-          <button type="button" className="btn-agregar-dia" disabled={agregandoDia} onClick={handleAgregarDia}>
-            {agregandoDia ? 'Agregando...' : '+ Agregar día'}
+          <button type="button" className="btn-agregar-dia" onClick={() => setModalAbierto(true)}>
+            + Agregar día {dias.length + 1}
           </button>
+
+          {modalAbierto && (
+            <ModalNuevoDia
+              numero={dias.length + 1}
+              ejerciciosDisponibles={ejerciciosDisponibles}
+              onEjercicioCreado={handleEjercicioCreado}
+              onCreado={handleDiaCreado}
+              onCerrar={cerrarModal}
+            />
+          )}
+
+          {diaAgregando && (
+            <ModalAgregarEjercicio
+              titulo={`Día ${diaAgregando.numero}`}
+              ejerciciosDisponibles={ejerciciosDisponibles}
+              onEjercicioCreado={handleEjercicioCreado}
+              onAgregar={(ejercicio, series, repeticiones) =>
+                handleAgregarEjercicio(diaAgregando.id, ejercicio, series, repeticiones)
+              }
+              onCerrar={() => setDiaAgregando(null)}
+            />
+          )}
+
+          {diaAQuitar && (
+            <DialogoConfirmar
+              titulo={`¿Quitar el día ${diaAQuitar.numero}?`}
+              mensaje="Se van a eliminar el día y todos sus ejercicios. Esta acción no se puede deshacer."
+              textoConfirmar="Quitar día"
+              onConfirmar={() => handleQuitarDia(diaAQuitar.id)}
+              onCerrar={() => setDiaAQuitar(null)}
+            />
+          )}
         </section>
       </main>
     </>
