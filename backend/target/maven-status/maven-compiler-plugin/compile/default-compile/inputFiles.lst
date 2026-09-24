@@ -6,6 +6,11 @@ C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifi
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\alimentos\dto\AlimentoResponse.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\alimentos\dto\CrearAlimentoRequest.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\api\ApiExceptionHandler.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\calendario\CalendarioController.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\calendario\CalendarioService.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\calendario\dto\DetalleDiaResponse.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\calendario\dto\DiaCalendarioResponse.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\calendario\dto\EjercicioRealizadoResponse.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\config\SecurityConfig.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\dto\CrearEjercicioRequest.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\ejercicios\dto\EjercicioResponse.java
@@ -19,6 +24,7 @@ C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifi
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\dto\SerieEntrenamientoResponse.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\EntrenamientoController.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\EntrenamientoService.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\ResumenSeriesPorFecha.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\SerieEntrenamiento.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\SerieEntrenamientoNoEncontradaException.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\entrenamiento\SerieEntrenamientoRepository.java
@@ -52,6 +58,7 @@ C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifi
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\nutricion\RegistroDiarioController.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\nutricion\RegistroDiarioRepository.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\nutricion\RegistroDiarioService.java
+C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\nutricion\ResumenNutricionPorFecha.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\NutrifitBackendApplication.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\DiaRutina.java
 C:\Users\vicen\Programacion\Proyectos\nutrifit\backend\src\main\java\com\nutrifit\rutinas\DiaRutinaNoEncontradoException.java

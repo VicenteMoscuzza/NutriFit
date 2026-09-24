@@ -868,3 +868,263 @@
   color: var(--accent-light);
   border-color: var(--accent-border);
 }
+
+/* Calendario */
+.calendario {
+  width: 100%;
+  max-width: 760px;
+  padding: 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.calendario-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendario-header h2 {
+  margin: 0;
+  min-width: 190px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.page .calendario-nav,
+.page .calendario-hoy {
+  margin-top: 0;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.page .calendario-nav {
+  width: 36px;
+  padding: 4px 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.page .calendario-hoy {
+  margin-left: auto;
+  font-size: 13px;
+}
+
+.page .calendario-nav:hover:not(:disabled),
+.page .calendario-hoy:hover:not(:disabled) {
+  color: var(--text-h);
+  border-color: var(--accent-border);
+  transform: none;
+  box-shadow: none;
+}
+
+.calendario-resumen {
+  margin: 10px 0 14px;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.calendario-grilla {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendario-dia-semana {
+  padding-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.calendario-celda {
+  min-height: 72px;
+}
+
+.page .calendario-celda {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 0;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  background: var(--bg-elevated);
+  color: var(--text-h);
+  font-weight: 500;
+  text-align: left;
+  box-shadow: none;
+}
+
+.page .calendario-celda:hover:not(:disabled) {
+  border-color: var(--border);
+  transform: none;
+  box-shadow: none;
+}
+
+.calendario-celda.vacia {
+  visibility: hidden;
+}
+
+.page .calendario-celda.futura {
+  color: var(--text-dim);
+}
+
+.page .calendario-celda.hoy .calendario-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #04121e;
+  font-weight: 700;
+}
+
+.page .calendario-celda.seleccionada,
+.page .calendario-celda.seleccionada:hover:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.calendario-numero {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.calendario-marcas {
+  display: flex;
+  gap: 4px;
+}
+
+.calendario-marca {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.calendario-marca.entreno {
+  background: var(--accent);
+}
+
+.calendario-marca.comida {
+  background: var(--success);
+}
+
+.calendario-kcal {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.calendario-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.calendario-leyenda > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calendario-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.calendario-detalle > h2 {
+  margin: 0;
+  font-size: 20px;
+  text-align: left;
+}
+
+.calendario-detalle-columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.lista-ejercicios li.calendario-ejercicio {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.calendario-series {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.calendario-serie {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--accent-light);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+
+.calendario-comida {
+  margin-top: 14px;
+}
+
+.calendario-comida h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-h);
+}
+
+.calendario-comida .grupo {
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+@media (max-width: 600px) {
+  .calendario {
+    padding: 12px;
+  }
+
+  .calendario-header h2 {
+    min-width: 0;
+    flex: 1;
+    font-size: 16px;
+  }
+
+  .calendario-grilla {
+    gap: 4px;
+  }
+
+  .calendario-celda {
+    min-height: 52px;
+  }
+
+  .page .calendario-celda {
+    align-items: center;
+    padding: 4px 2px;
+  }
+
+  .calendario-kcal {
+    display: none;
+  }
+
+  .calendario-detalle-columnas {
+    grid-template-columns: 1fr;
+  }
+}

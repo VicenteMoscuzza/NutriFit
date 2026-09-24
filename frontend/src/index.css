@@ -20,6 +20,9 @@
   --danger: #f87171;
   --danger-bg: rgba(248, 113, 113, 0.12);
 
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.12);
+
   --shadow: rgba(0, 0, 0, 0.45) 0 20px 40px -20px, rgba(0, 0, 0, 0.3) 0 8px 16px -8px;
   --shadow-sm: rgba(0, 0, 0, 0.35) 0 8px 16px -8px;
 

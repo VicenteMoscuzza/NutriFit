@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import './App.css'
 import RutaPrivada from './auth/RutaPrivada'
+import CalendarioPage from './pages/CalendarioPage'
 import ComidasGuardadasPage from './pages/ComidasGuardadasPage'
 import EntrenamientoHoyPage from './pages/EntrenamientoHoyPage'
 import HomePage from './pages/HomePage'
@@ -49,6 +50,14 @@ function App() {
         element={
           <RutaPrivada>
             <ComidasGuardadasPage />
+          </RutaPrivada>
+        }
+      />
+      <Route
+        path="/calendario"
+        element={
+          <RutaPrivada>
+            <CalendarioPage />
           </RutaPrivada>
         }
       />

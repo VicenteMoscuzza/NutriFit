@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { to: '/entrenamiento', label: 'Hoy' },
   { to: '/rutina', label: 'Rutina' },
   { to: '/nutricion', label: 'Nutrición' },
+  { to: '/calendario', label: 'Calendario' },
 ]
 
 function estaActivo(pathname: string, to: string) {

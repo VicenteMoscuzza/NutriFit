@@ -30,6 +30,11 @@ export default function HomePage() {
             <h2>Nutrición de hoy</h2>
             <p>Registrá tus comidas del día y seguí tus macros.</p>
           </Link>
+          <Link to="/calendario" className="dashboard-card">
+            <span className="dashboard-icon">🗓️</span>
+            <h2>Calendario</h2>
+            <p>Revisá qué días entrenaste y qué comiste cada día.</p>
+          </Link>
         </div>
       </main>
     </>
